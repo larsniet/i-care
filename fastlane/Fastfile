@@ -32,6 +32,24 @@ platform :ios do
       readonly: true
     )
 
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      team_id: "3BGHPQ6C3H",
+      code_sign_identity: "Apple Distribution",
+      targets: ["iCare"],
+      profile_name: "match AppStore com.icareeye.app",
+      bundle_identifier: "com.icareeye.app"
+    )
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      team_id: "3BGHPQ6C3H",
+      code_sign_identity: "Apple Distribution",
+      targets: ["iCareWatch"],
+      profile_name: "match AppStore com.icareeye.app.watchkitapp",
+      bundle_identifier: "com.icareeye.app.watchkitapp"
+    )
+
     version = ENV["APP_VERSION"] || "1.0.0"
     build_number = Time.now.strftime("%Y%m%d%H%M")
 
