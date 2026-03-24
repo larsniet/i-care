@@ -19,7 +19,6 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
-      MATCH_REPO: ${{ secrets.MATCH_REPO }}
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
 
     steps:
@@ -47,18 +46,15 @@ jobs:
           bundler-cache: true
 
       - name: Configure SSH for Match
-        env:
-          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "$MATCH_DEPLOY_KEY" > ~/.ssh/match_deploy_key
+          printf '%s\n' "${{ secrets.MATCH_DEPLOY_KEY }}" > ~/.ssh/match_deploy_key
           chmod 600 ~/.ssh/match_deploy_key
           ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
-          cat >> ~/.ssh/config <<EOF
-          Host github.com
-            IdentityFile ~/.ssh/match_deploy_key
-            IdentitiesOnly yes
-          EOF
+          printf 'Host github.com\n  IdentityFile ~/.ssh/match_deploy_key\n  IdentitiesOnly yes\n' >> ~/.ssh/config
+
+      - name: Set MATCH_REPO
+        run: echo "MATCH_REPO=${{ secrets.MATCH_REPO }}" | tr -d '\n\r' >> "$GITHUB_ENV"
 
       - name: Generate Xcode project
         run: |
