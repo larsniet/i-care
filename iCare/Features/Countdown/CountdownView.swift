@@ -11,7 +11,8 @@ struct CountdownView: View {
     @State private var endDate: Date?
     @State private var duration: Int = 20
 
-    private let hapticEngine = UINotificationFeedbackGenerator()
+    private let notificationHaptic = UINotificationFeedbackGenerator()
+    private let impactHaptic = UIImpactFeedbackGenerator(style: .medium)
 
     var body: some View {
         ZStack {
@@ -36,6 +37,7 @@ struct CountdownView: View {
         .onAppear {
             guard !didStart else { return }
             didStart = true
+            appState.notificationCoordinator.isShowingCountdown = true
             duration = max(1, appState.settings.breakDurationSeconds)
             if let started = appState.breakStartedAt {
                 endDate = started.addingTimeInterval(Double(duration))
@@ -44,8 +46,16 @@ struct CountdownView: View {
                 endDate = now.addingTimeInterval(Double(duration))
             }
             if appState.settings.hapticsEnabled {
-                hapticEngine.prepare()
+                notificationHaptic.prepare()
+                impactHaptic.prepare()
+                impactHaptic.impactOccurred()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [impactHaptic] in
+                    impactHaptic.impactOccurred()
+                }
             }
+        }
+        .onDisappear {
+            appState.notificationCoordinator.isShowingCountdown = false
         }
         .onChange(of: appState.breakStartedAt) { _, newValue in
             if newValue == nil && !isComplete {
@@ -122,7 +132,7 @@ struct CountdownView: View {
 
         if type == .completed {
             if appState.settings.hapticsEnabled {
-                hapticEngine.notificationOccurred(.success)
+                notificationHaptic.notificationOccurred(.success)
             }
             if appState.settings.soundEnabled {
                 AudioServicesPlaySystemSound(1025)

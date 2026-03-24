@@ -41,7 +41,10 @@ struct WatchCountdownView: View {
             }
             if !didPlayStartHaptic && appState.settings.hapticsEnabled {
                 didPlayStartHaptic = true
-                WKInterfaceDevice.current().play(.start)
+                WKInterfaceDevice.current().play(.click)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    WKInterfaceDevice.current().play(.click)
+                }
             }
         }
         .onChange(of: isComplete) { _, complete in
@@ -119,7 +122,7 @@ struct WatchCountdownView: View {
         isComplete = true
 
         if type == .completed && appState.settings.hapticsEnabled {
-            WKInterfaceDevice.current().play(.success)
+            WKInterfaceDevice.current().play(.stop)
         }
 
         appState.endBreak(type: type, device: .watch)

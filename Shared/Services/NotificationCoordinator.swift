@@ -10,6 +10,7 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     static let snoozeActionID = "ICARE_SNOOZE"
     static let skipActionID = "ICARE_SKIP"
     static let reminderIDPrefix = "icare.reminder."
+    static let breakCompleteID = "icare.break.complete"
 
     var onStartBreak: (@MainActor () -> Void)?
     var onSnooze: (@MainActor () -> Void)?
@@ -98,13 +99,44 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
         }
     }
 
+    // MARK: - Break Complete Notification
+
+    func scheduleBreakComplete(at date: Date, soundEnabled: Bool) {
+        let content = UNMutableNotificationContent()
+        content.title = "Break complete"
+        content.body = "Great job! Your eyes will thank you."
+        content.sound = soundEnabled ? .default : nil
+
+        let trigger = UNTimeIntervalNotificationTrigger(
+            timeInterval: max(1, date.timeIntervalSinceNow),
+            repeats: false
+        )
+        let request = UNNotificationRequest(
+            identifier: Self.breakCompleteID,
+            content: content,
+            trigger: trigger
+        )
+        center.add(request)
+    }
+
+    func cancelBreakComplete() {
+        center.removePendingNotificationRequests(withIdentifiers: [Self.breakCompleteID])
+    }
+
     // MARK: - UNUserNotificationCenterDelegate
+
+    var isShowingCountdown = false
 
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler handler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        let id = notification.request.identifier
+        if id == Self.breakCompleteID && isShowingCountdown {
+            handler([])
+            return
+        }
         handler([.banner, .sound])
     }
 

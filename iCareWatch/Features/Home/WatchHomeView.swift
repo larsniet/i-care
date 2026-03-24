@@ -83,10 +83,11 @@ struct WatchHomeView: View {
 
     private var mainDashboard: some View {
         GeometryReader { geo in
-            let buttonAreaHeight: CGFloat = 96
+            let buttonAreaHeight: CGFloat = 110
+            let topInset: CGFloat = 20
             let ringCenterY = hasBottomButtons
-                ? (geo.size.height - buttonAreaHeight) / 2
-                : geo.size.height / 2
+                ? (geo.size.height - buttonAreaHeight + topInset) / 2
+                : (geo.size.height + topInset) / 2
 
             ZStack(alignment: .top) {
                 ringContent
@@ -147,7 +148,7 @@ struct WatchHomeView: View {
                         }
                     }
                     .padding(.horizontal, ICareSpacing.base)
-                    .padding(.bottom, ICareSpacing.xs)
+                    .padding(.bottom, ICareSpacing.sm)
                     .frame(maxHeight: .infinity, alignment: .bottom)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }

@@ -125,10 +125,15 @@ final class AppState: ObservableObject {
                 } else if self.breakStartedAt == nil {
                     self.breakStartedAt = Date()
                 }
+                if let started = self.breakStartedAt {
+                    let completeAt = started.addingTimeInterval(Double(self.settings.breakDurationSeconds))
+                    self.notificationCoordinator.scheduleBreakComplete(at: completeAt, soundEnabled: self.settings.soundEnabled)
+                }
                 self.pendingAction = .startBreak
             case "endBreak":
                 let wasActive = self.breakStartedAt != nil
                 self.breakStartedAt = nil
+                self.notificationCoordinator.cancelBreakComplete()
                 if wasActive {
                     let type: BreakCompletionType = (payload["type"] as? String) == "completed" ? .completed : .skipped
                     self.completeBreak(type: type, device: .watch)
@@ -243,6 +248,8 @@ final class AppState: ObservableObject {
     func startBreak() {
         let now = Date()
         breakStartedAt = now
+        let completeAt = now.addingTimeInterval(Double(settings.breakDurationSeconds))
+        notificationCoordinator.scheduleBreakComplete(at: completeAt, soundEnabled: settings.soundEnabled)
         sendSyncContext()
         syncManager.sendCommand("startBreak", payload: [
             "breakStartedAt": now.timeIntervalSince1970
@@ -252,6 +259,7 @@ final class AppState: ObservableObject {
     func endBreak(type: BreakCompletionType, device: DeviceType = .iphone) {
         guard breakStartedAt != nil else { return }
         breakStartedAt = nil
+        notificationCoordinator.cancelBreakComplete()
         completeBreak(type: type, device: device)
         syncManager.sendCommand("endBreak", payload: [
             "type": type.rawValue
