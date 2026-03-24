@@ -8,17 +8,10 @@ struct CountdownView: View {
 
     @State private var isComplete = false
     @State private var didStart = false
+    @State private var endDate: Date?
+    @State private var duration: Int = 20
 
     private let hapticEngine = UINotificationFeedbackGenerator()
-
-    private var endDate: Date {
-        let started = appState.breakStartedAt ?? Date()
-        return started.addingTimeInterval(Double(appState.settings.breakDurationSeconds))
-    }
-
-    private var totalSeconds: Int {
-        max(1, appState.settings.breakDurationSeconds)
-    }
 
     var body: some View {
         ZStack {
@@ -26,10 +19,10 @@ struct CountdownView: View {
 
             if isComplete {
                 completedContent
-            } else if appState.breakStartedAt != nil {
+            } else if let endDate {
                 TimelineView(.periodic(from: .distantPast, by: 1)) { context in
                     let remaining = max(0, Int(endDate.timeIntervalSince(context.date)))
-                    let progress = 1.0 - (Double(remaining) / Double(totalSeconds))
+                    let progress = 1.0 - (Double(remaining) / Double(max(1, duration)))
 
                     countdownContent(remaining: remaining, progress: progress)
                         .onChange(of: remaining) { _, newValue in
@@ -43,6 +36,13 @@ struct CountdownView: View {
         .onAppear {
             guard !didStart else { return }
             didStart = true
+            duration = max(1, appState.settings.breakDurationSeconds)
+            if let started = appState.breakStartedAt {
+                endDate = started.addingTimeInterval(Double(duration))
+            } else {
+                let now = Date()
+                endDate = now.addingTimeInterval(Double(duration))
+            }
             if appState.settings.hapticsEnabled {
                 hapticEngine.prepare()
             }
@@ -112,6 +112,12 @@ struct CountdownView: View {
 
     private func finishBreak(type: BreakCompletionType) {
         guard !isComplete || type == .skipped else { return }
+
+        if type == .completed, let endDate {
+            let wallClockRemaining = endDate.timeIntervalSince(Date())
+            if wallClockRemaining > 1.5 { return }
+        }
+
         isComplete = true
 
         if type == .completed {
@@ -123,9 +129,7 @@ struct CountdownView: View {
             }
         }
 
-        #if os(iOS)
         appState.endBreak(type: type, device: .iphone)
-        #endif
 
         DispatchQueue.main.asyncAfter(deadline: .now() + (type == .completed ? 1.5 : 0)) {
             dismiss()

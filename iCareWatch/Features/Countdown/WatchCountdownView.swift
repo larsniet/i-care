@@ -7,15 +7,8 @@ struct WatchCountdownView: View {
 
     @State private var isComplete = false
     @State private var didPlayStartHaptic = false
-
-    private var endDate: Date {
-        let started = appState.breakStartedAt ?? Date()
-        return started.addingTimeInterval(Double(appState.settings.breakDurationSeconds))
-    }
-
-    private var totalSeconds: Int {
-        max(1, appState.settings.breakDurationSeconds)
-    }
+    @State private var endDate: Date?
+    @State private var duration: Int = 20
 
     var body: some View {
         ZStack {
@@ -23,10 +16,10 @@ struct WatchCountdownView: View {
 
             if isComplete {
                 completeContent
-            } else if appState.breakStartedAt != nil {
+            } else if let endDate {
                 TimelineView(.periodic(from: .distantPast, by: 1)) { context in
                     let remaining = max(0, Int(endDate.timeIntervalSince(context.date)))
-                    let progress = 1.0 - (Double(remaining) / Double(totalSeconds))
+                    let progress = 1.0 - (Double(remaining) / Double(max(1, duration)))
 
                     countdownContent(remaining: remaining, progress: progress)
                         .onChange(of: remaining) { _, newValue in
@@ -38,6 +31,14 @@ struct WatchCountdownView: View {
             }
         }
         .onAppear {
+            guard endDate == nil else { return }
+            duration = max(1, appState.settings.breakDurationSeconds)
+            if let started = appState.breakStartedAt {
+                endDate = started.addingTimeInterval(Double(duration))
+            } else {
+                let now = Date()
+                endDate = now.addingTimeInterval(Double(duration))
+            }
             if !didPlayStartHaptic && appState.settings.hapticsEnabled {
                 didPlayStartHaptic = true
                 WKInterfaceDevice.current().play(.start)
@@ -109,14 +110,18 @@ struct WatchCountdownView: View {
 
     private func finishBreak(type: BreakCompletionType) {
         guard !isComplete || type == .skipped else { return }
+
+        if type == .completed, let endDate {
+            let wallClockRemaining = endDate.timeIntervalSince(Date())
+            if wallClockRemaining > 1.5 { return }
+        }
+
         isComplete = true
 
         if type == .completed && appState.settings.hapticsEnabled {
             WKInterfaceDevice.current().play(.success)
         }
 
-        #if os(watchOS)
         appState.endBreak(type: type, device: .watch)
-        #endif
     }
 }
