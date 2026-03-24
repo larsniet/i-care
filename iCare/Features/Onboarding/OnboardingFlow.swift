@@ -6,9 +6,11 @@ struct OnboardingFlow: View {
     @State private var goingForward = true
     @GestureState private var dragOffset: CGFloat = 0
 
+    private let totalSteps = 4
     private var displayStep: Int { currentStep + 1 }
+    private var lastStep: Int { totalSteps - 1 }
 
-    private var canSwipeForward: Bool { currentStep < 2 }
+    private var canSwipeForward: Bool { currentStep < lastStep }
     private var canSwipeBack: Bool { currentStep > 0 }
 
     var body: some View {
@@ -19,16 +21,18 @@ struct OnboardingFlow: View {
                 // MARK: - Header
                 HStack {
                     HStack(spacing: 6) {
-                        Image(systemName: "leaf.fill")
-                            .font(.system(size: 14))
-                        Text("i care")
+                        Image("AppLogo")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 22, height: 22)
+                        Text("icare")
                             .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(ICareColors.brand)
                     }
-                    .foregroundStyle(ICareColors.brand)
 
                     Spacer()
 
-                    Text("STEP \(displayStep) OF 3")
+                    Text("STEP \(displayStep) OF \(totalSteps)")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(ICareColors.textTertiary)
                         .tracking(1.5)
@@ -45,6 +49,7 @@ struct OnboardingFlow: View {
                         switch currentStep {
                         case 0: WelcomeStep()
                         case 1: ScheduleSetupStep()
+                        case 2: FocusModeStep()
                         default: NotificationStep()
                         }
                     }
@@ -78,6 +83,10 @@ struct OnboardingFlow: View {
             case 1:
                 primaryButton("Continue", icon: "arrow.right") { goTo(2) }
                 backButton { goTo(0) }
+
+            case 2:
+                primaryButton("Continue", icon: "arrow.right") { goTo(3) }
+                backButton { goTo(1) }
 
             default:
                 primaryButton("Enable Notifications", icon: "bell.fill") { requestNotifications() }

@@ -2,37 +2,65 @@ import SwiftUI
 import UIKit
 
 struct HomeBlockedContent: View {
+    @EnvironmentObject private var appState: AppState
+
+    private let ringSize: CGFloat = 260
+    private let ringWidth: CGFloat = 8
+
     var body: some View {
-        VStack(alignment: .leading, spacing: ICareSpacing.lg) {
-            HStack(alignment: .center, spacing: ICareSpacing.sm) {
-                Image(systemName: "exclamationmark.triangle")
-                    .font(ICareTypography.callout)
-                Text("Notifications are off")
-                    .font(ICareTypography.subhead)
-                    .fontWeight(.medium)
-            }
-            .foregroundStyle(ICareColors.statusBlocked)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(ICareSpacing.base)
-            .background(ICareColors.statusBlocked.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
+        VStack(spacing: 0) {
+            Spacer(minLength: ICareSpacing.lg)
 
-            Text("i care needs notifications to remind you about breaks. Enable them in Settings.")
-                .font(ICareTypography.body)
-                .foregroundStyle(ICareColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            ZStack {
+                ProgressRing(
+                    progress: 0,
+                    size: ringSize,
+                    trackWidth: ringWidth,
+                    fillWidth: ringWidth,
+                    trackColor: ICareColors.separator,
+                    fillColor: ICareColors.statusBlocked
+                )
+                .opacity(0.3)
 
-            PrimaryButton(title: "Open Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
+                VStack(spacing: ICareSpacing.sm) {
+                    Text("NOTIFICATIONS OFF")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(ICareColors.statusBlocked)
+                        .tracking(1.5)
+
+                    Image(systemName: "bell.slash")
+                        .font(.system(size: 48, weight: .ultraLight))
+                        .foregroundStyle(ICareColors.statusBlocked.opacity(0.6))
+
+                    Text("Enable notifications to\nreceive break reminders")
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundStyle(ICareColors.textSecondary)
+                        .multilineTextAlignment(.center)
                 }
             }
 
-            HomeActiveContent()
-                .opacity(0.42)
-                .allowsHitTesting(false)
+            Spacer(minLength: ICareSpacing.xl)
+
+            Button {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                HStack(spacing: ICareSpacing.sm) {
+                    Image(systemName: "gear")
+                        .font(.system(size: 14))
+                    Text("Open Settings")
+                }
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .background(ICareColors.brand)
+                .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, ICareSpacing.lg)
+            .padding(.bottom, ICareSpacing.base)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, ICareSpacing.base)
     }
 }

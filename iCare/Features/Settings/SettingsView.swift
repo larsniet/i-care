@@ -4,7 +4,6 @@ import UIKit
 
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
     private let intervalOptions = [15, 20, 30, 45]
@@ -95,12 +94,6 @@ struct SettingsView: View {
             .background(ICareColors.surface)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundStyle(ICareColors.brand)
-                }
-            }
         }
         .tint(ICareColors.brand)
     }

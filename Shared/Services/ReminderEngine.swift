@@ -2,6 +2,8 @@ import Foundation
 
 enum ReminderEngine {
 
+    static let maxBatchSize = 50
+
     /// Computes the next valid reminder date after `referenceDate`, respecting
     /// active hours and weekday settings. Returns nil if reminders are disabled
     /// or no valid slot exists within 7 days.
@@ -9,15 +11,26 @@ enum ReminderEngine {
         after referenceDate: Date = Date(),
         settings: ReminderSettings
     ) -> Date? {
-        guard settings.remindersEnabled else { return nil }
+        upcomingReminderDates(after: referenceDate, settings: settings, limit: 1).first
+    }
+
+    /// Computes up to `limit` upcoming reminder dates, for batch scheduling.
+    /// iOS allows up to 64 pending notifications per app.
+    static func upcomingReminderDates(
+        after referenceDate: Date = Date(),
+        settings: ReminderSettings,
+        limit: Int = maxBatchSize
+    ) -> [Date] {
+        guard settings.remindersEnabled, limit > 0 else { return [] }
 
         let calendar = Calendar.current
         let interval = TimeInterval(settings.reminderIntervalMinutes * 60)
+        let searchLimit = calendar.date(byAdding: .day, value: 7, to: referenceDate)!
+
+        var results: [Date] = []
         var candidate = referenceDate.addingTimeInterval(interval)
 
-        let limit = calendar.date(byAdding: .day, value: 7, to: referenceDate)!
-
-        while candidate < limit {
+        while candidate < searchLimit, results.count < limit {
             if settings.weekdaysOnly {
                 let weekday = calendar.component(.weekday, from: candidate)
                 if weekday == 1 || weekday == 7 {
@@ -32,7 +45,9 @@ enum ReminderEngine {
             let endMinute = settings.activeEndHour * 60 + settings.activeEndMinute
 
             if minuteOfDay >= startMinute && minuteOfDay < endMinute {
-                return candidate
+                results.append(candidate)
+                candidate = candidate.addingTimeInterval(interval)
+                continue
             }
 
             if minuteOfDay < startMinute {
@@ -49,7 +64,7 @@ enum ReminderEngine {
             candidate = nextActiveStart(after: candidate, settings: settings, calendar: calendar)
         }
 
-        return nil
+        return results
     }
 
     /// Convenience: computes the snooze target (half the normal interval, clamped

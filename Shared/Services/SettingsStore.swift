@@ -6,6 +6,7 @@ enum SettingsStore {
     private static let settingsKey = "icare.settings"
     private static let runtimeKey = "icare.runtime_state"
     private static let onboardingKey = "icare.onboarding_completed"
+    private static let focusFilterKey = "icare.focus_filter_state"
 
     private static var defaults: UserDefaults {
         UserDefaults(suiteName: suiteName) ?? .standard
@@ -47,5 +48,19 @@ enum SettingsStore {
 
     static func saveOnboardingCompleted(_ value: Bool) {
         defaults.set(value, forKey: onboardingKey)
+    }
+
+    // MARK: - Focus Filter
+
+    static func loadFocusFilterState() -> FocusFilterState {
+        guard let data = defaults.data(forKey: focusFilterKey),
+              let value = try? JSONDecoder().decode(FocusFilterState.self, from: data)
+        else { return FocusFilterState() }
+        return value
+    }
+
+    static func save(_ state: FocusFilterState) {
+        guard let data = try? JSONEncoder().encode(state) else { return }
+        defaults.set(data, forKey: focusFilterKey)
     }
 }

@@ -9,7 +9,7 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     static let startActionID = "ICARE_START"
     static let snoozeActionID = "ICARE_SNOOZE"
     static let skipActionID = "ICARE_SKIP"
-    static let reminderRequestID = "icare.next_reminder"
+    static let reminderIDPrefix = "icare.reminder."
 
     var onStartBreak: (@MainActor () -> Void)?
     var onSnooze: (@MainActor () -> Void)?
@@ -60,32 +60,42 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
 
     // MARK: - Scheduling
 
-    func scheduleReminder(at date: Date, settings: ReminderSettings) {
-        center.removePendingNotificationRequests(withIdentifiers: [Self.reminderRequestID])
+    func scheduleReminders(at dates: [Date], settings: ReminderSettings) {
+        cancelPendingReminders()
 
-        let content = UNMutableNotificationContent()
-        content.title = "Time for a break"
-        content.body = Self.bodies.randomElement() ?? "Look at something in the distance"
-        content.categoryIdentifier = Self.categoryIdentifier
-        if settings.soundEnabled {
-            content.sound = .default
+        for (index, date) in dates.enumerated() {
+            let content = UNMutableNotificationContent()
+            content.title = "Time for a break"
+            content.body = Self.bodies[index % Self.bodies.count]
+            content.categoryIdentifier = Self.categoryIdentifier
+            if settings.soundEnabled {
+                content.sound = .default
+            }
+
+            let comps = Calendar.current.dateComponents(
+                [.year, .month, .day, .hour, .minute, .second],
+                from: date
+            )
+            let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+            let request = UNNotificationRequest(
+                identifier: "\(Self.reminderIDPrefix)\(index)",
+                content: content,
+                trigger: trigger
+            )
+            center.add(request)
         }
-
-        let comps = Calendar.current.dateComponents(
-            [.year, .month, .day, .hour, .minute, .second],
-            from: date
-        )
-        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
-        let request = UNNotificationRequest(
-            identifier: Self.reminderRequestID,
-            content: content,
-            trigger: trigger
-        )
-        center.add(request)
     }
 
     func cancelPendingReminders() {
-        center.removePendingNotificationRequests(withIdentifiers: [Self.reminderRequestID])
+        center.getPendingNotificationRequests { [weak self] requests in
+            guard let prefix = self.map({ _ in Self.reminderIDPrefix }) else { return }
+            let ids = requests
+                .map(\.identifier)
+                .filter { $0.hasPrefix(prefix) }
+            if !ids.isEmpty {
+                self?.center.removePendingNotificationRequests(withIdentifiers: ids)
+            }
+        }
     }
 
     // MARK: - UNUserNotificationCenterDelegate

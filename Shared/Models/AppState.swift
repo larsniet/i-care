@@ -40,19 +40,36 @@ final class AppState: ObservableObject {
         didSet { SettingsStore.saveOnboardingCompleted(hasCompletedOnboarding) }
     }
     @Published var pendingAction: NotificationAction?
+    @Published var focusFilterState: FocusFilterState {
+        didSet { onFocusFilterChanged() }
+    }
 
     let notificationCoordinator: NotificationCoordinator
 
     // MARK: - Computed
 
+    var effectiveRemindersEnabled: Bool {
+        if focusFilterState.overrideActive {
+            return focusFilterState.enableReminders
+        }
+        return settings.remindersEnabled
+    }
+
+    var effectiveIntervalMinutes: Int {
+        if focusFilterState.overrideActive, let override = focusFilterState.intervalOverrideMinutes {
+            return override
+        }
+        return settings.reminderIntervalMinutes
+    }
+
     var isFullyOperational: Bool {
-        settings.remindersEnabled
+        effectiveRemindersEnabled
             && notificationAuthorizationStatus == .authorized
             && !runtimeState.isPaused
     }
 
     var currentStatus: ReminderStatus {
-        if !settings.remindersEnabled { return .inactive }
+        if !effectiveRemindersEnabled { return .inactive }
         if runtimeState.isPaused { return .paused }
         if notificationAuthorizationStatus != .authorized { return .blocked }
         return .active
@@ -69,6 +86,7 @@ final class AppState: ObservableObject {
         self.todaySummary = CompletionTracker.loadTodaySummary()
         self.notificationAuthorizationStatus = .notDetermined
         self.hasCompletedOnboarding = SettingsStore.loadOnboardingCompleted()
+        self.focusFilterState = SettingsStore.loadFocusFilterState()
 
         coordinator.registerCategories()
         bindNotificationActions(coordinator)
@@ -76,7 +94,7 @@ final class AppState: ObservableObject {
         Task { [weak self] in
             guard let self else { return }
             await self.refreshNotificationStatus()
-            self.scheduleNextReminderIfNeeded()
+            self.scheduleReminders()
         }
     }
 
@@ -86,18 +104,38 @@ final class AppState: ObservableObject {
         notificationAuthorizationStatus = await notificationCoordinator.currentStatus()
     }
 
-    func scheduleNextReminderIfNeeded() {
+    func refreshFocusFilterState() {
+        let loaded = SettingsStore.loadFocusFilterState()
+        if loaded != focusFilterState {
+            focusFilterState = loaded
+        }
+    }
+
+    func scheduleReminders(force: Bool = false) {
         guard isFullyOperational else {
             notificationCoordinator.cancelPendingReminders()
             runtimeState.nextReminderAt = nil
             return
         }
-        guard let next = ReminderEngine.nextReminderDate(after: Date(), settings: settings) else {
+
+        let effectiveSettings = settingsWithFocusOverrides()
+
+        if !force,
+           let existing = runtimeState.nextReminderAt,
+           existing.timeIntervalSinceNow > 0 {
+            return
+        }
+
+        let dates = ReminderEngine.upcomingReminderDates(
+            after: Date(),
+            settings: effectiveSettings
+        )
+        guard let first = dates.first else {
             runtimeState.nextReminderAt = nil
             return
         }
-        runtimeState.nextReminderAt = next
-        notificationCoordinator.scheduleReminder(at: next, settings: settings)
+        runtimeState.nextReminderAt = first
+        notificationCoordinator.scheduleReminders(at: dates, settings: effectiveSettings)
     }
 
     func completeBreak(type: BreakCompletionType, device: DeviceType = .iphone) {
@@ -106,14 +144,28 @@ final class AppState: ObservableObject {
         if type == .completed {
             runtimeState.lastReminderFiredAt = Date()
         }
-        scheduleNextReminderIfNeeded()
+        scheduleReminders(force: true)
     }
 
     func snooze() {
-        let target = ReminderEngine.snoozeDate(settings: settings)
-        runtimeState.nextReminderAt = target
-        notificationCoordinator.scheduleReminder(at: target, settings: settings)
+        let effectiveSettings = settingsWithFocusOverrides()
+        let snoozeTarget = ReminderEngine.snoozeDate(settings: effectiveSettings)
+        runtimeState.nextReminderAt = snoozeTarget
+
+        var dates = [snoozeTarget]
+        let rest = ReminderEngine.upcomingReminderDates(
+            after: snoozeTarget,
+            settings: effectiveSettings,
+            limit: ReminderEngine.maxBatchSize - 1
+        )
+        dates.append(contentsOf: rest)
+        notificationCoordinator.scheduleReminders(at: dates, settings: effectiveSettings)
         SettingsStore.save(runtimeState)
+    }
+
+    func resetTimer() {
+        runtimeState.nextReminderAt = nil
+        scheduleReminders(force: true)
     }
 
     func pause() {
@@ -124,14 +176,28 @@ final class AppState: ObservableObject {
     func resume() {
         runtimeState.isPaused = false
         runtimeState.pausedUntil = nil
-        scheduleNextReminderIfNeeded()
+        scheduleReminders(force: true)
     }
 
     // MARK: - Private
 
     private func onSettingsChanged() {
         SettingsStore.save(settings)
-        scheduleNextReminderIfNeeded()
+        scheduleReminders(force: true)
+    }
+
+    private func onFocusFilterChanged() {
+        scheduleReminders(force: true)
+    }
+
+    private func settingsWithFocusOverrides() -> ReminderSettings {
+        guard focusFilterState.overrideActive else { return settings }
+        var effective = settings
+        effective.remindersEnabled = focusFilterState.enableReminders
+        if let interval = focusFilterState.intervalOverrideMinutes {
+            effective.reminderIntervalMinutes = interval
+        }
+        return effective
     }
 
     private func bindNotificationActions(_ coordinator: NotificationCoordinator) {

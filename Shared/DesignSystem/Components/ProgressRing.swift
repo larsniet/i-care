@@ -14,7 +14,7 @@ struct ProgressRing: View {
                 .stroke(trackColor, lineWidth: trackWidth)
 
             Circle()
-                .trim(from: 0, to: progress)
+                .trim(from: 0, to: min(max(progress, 0), 1))
                 .stroke(fillColor, style: StrokeStyle(lineWidth: fillWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
         }

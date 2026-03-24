@@ -13,8 +13,9 @@ struct iCareApp: App {
                         for: willEnterForegroundNotification
                     )
                 ) { _ in
+                    appState.refreshFocusFilterState()
                     Task { await appState.refreshNotificationStatus() }
-                    appState.scheduleNextReminderIfNeeded()
+                    appState.scheduleReminders()
                 }
         }
     }

@@ -4,53 +4,156 @@ struct HomeActiveContent: View {
     @EnvironmentObject private var appState: AppState
     var onStartBreak: (() -> Void)?
 
+    private let ringSize: CGFloat = 260
+    private let ringWidth: CGFloat = 8
+
     var body: some View {
-        VStack(spacing: ICareSpacing.xl) {
-            StatusBadge(status: .active)
+        VStack(spacing: 0) {
+            Spacer(minLength: ICareSpacing.lg)
 
-            VStack(spacing: ICareSpacing.xs) {
-                Text("Next break in")
-                    .font(ICareTypography.caption)
-                    .foregroundStyle(ICareColors.textSecondary)
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let remaining = secondsRemaining(at: context.date)
+                let progress = intervalProgress(at: context.date)
 
-                TimelineView(.periodic(from: .now, by: 60)) { context in
-                    Group {
-                        if let minutes = minutesRemaining(referenceDate: context.date) {
-                            Text(minutes == 1 ? "1 min" : "\(minutes) min")
-                                .font(ICareTypography.displaySmall)
-                                .foregroundStyle(ICareColors.textPrimary)
-                        } else {
-                            Text("Scheduling...")
-                                .font(ICareTypography.displaySmall)
-                                .foregroundStyle(ICareColors.textTertiary)
-                        }
+                ZStack {
+                    ProgressRing(
+                        progress: progress,
+                        size: ringSize,
+                        trackWidth: ringWidth,
+                        fillWidth: ringWidth,
+                        trackColor: ICareColors.separator,
+                        fillColor: ICareColors.brand
+                    )
+                    .animation(.linear(duration: 1), value: progress)
+
+                    VStack(spacing: ICareSpacing.sm) {
+                        Text(statusLabel)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(ICareColors.textTertiary)
+                            .tracking(1.5)
+
+                        Text(countdownString(seconds: remaining))
+                            .font(.system(size: 52, weight: .light, design: .rounded))
+                            .foregroundStyle(ICareColors.textPrimary)
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+
+                        Text(nextBreakLabel(at: context.date))
+                            .font(.system(size: 15, weight: .regular))
+                            .foregroundStyle(ICareColors.textSecondary)
                     }
-                    .frame(maxWidth: .infinity)
                 }
             }
-            .multilineTextAlignment(.center)
 
-            Text(breaksTodayLabel)
-                .font(ICareTypography.body)
-                .foregroundStyle(ICareColors.textSecondary)
+            Spacer(minLength: ICareSpacing.xl)
 
-            SecondaryButton(title: "Pause") {
-                appState.pause()
+            breaksCard
+                .padding(.horizontal, ICareSpacing.lg)
+                .padding(.bottom, ICareSpacing.base)
+
+            HStack(spacing: ICareSpacing.sm) {
+                Button(action: { appState.resetTimer() }) {
+                    HStack(spacing: ICareSpacing.xs) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 13, weight: .medium))
+                        Text("Reset")
+                    }
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(ICareColors.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(ICareColors.separator.opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
+                }
+                .buttonStyle(.plain)
+
+                Button(action: { appState.pause() }) {
+                    HStack(spacing: ICareSpacing.xs) {
+                        Image(systemName: "pause.fill")
+                            .font(.system(size: 11))
+                        Text("Pause")
+                    }
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(ICareColors.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(ICareColors.separator.opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
+                }
+                .buttonStyle(.plain)
             }
+            .padding(.horizontal, ICareSpacing.lg)
+            .padding(.bottom, ICareSpacing.base)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, ICareSpacing.base)
     }
 
-    private var breaksTodayLabel: String {
+    // MARK: - Status
+
+    private var statusLabel: String {
+        if appState.focusFilterState.overrideActive {
+            return "FOCUS MODE ACTIVE"
+        }
+        return "REMINDERS ACTIVE"
+    }
+
+    // MARK: - Breaks Card
+
+    private var breaksCard: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(breakCountText)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(ICareColors.textPrimary)
+                Text("COMPLETED TODAY")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(ICareColors.textTertiary)
+                    .tracking(1)
+            }
+
+            Spacer()
+
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 32))
+                .foregroundStyle(ICareColors.brandMuted, ICareColors.brand.opacity(0.15))
+                .symbolRenderingMode(.palette)
+        }
+        .padding(ICareSpacing.base)
+        .background(ICareColors.surfaceRaised)
+        .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.lg))
+    }
+
+    private var breakCountText: String {
         let n = appState.todaySummary.completedBreakCount
-        return n == 1 ? "1 break today" : "\(n) breaks today"
+        return n == 1 ? "1 break" : "\(n) breaks"
     }
 
-    private func minutesRemaining(referenceDate: Date) -> Int? {
-        guard let next = appState.runtimeState.nextReminderAt else { return nil }
-        let interval = next.timeIntervalSince(referenceDate)
-        if interval <= 0 { return 0 }
-        return Int(ceil(interval / 60))
+    // MARK: - Time Helpers
+
+    private func countdownString(seconds: Int) -> String {
+        let m = seconds / 60
+        let s = seconds % 60
+        return String(format: "%d:%02d", m, s)
+    }
+
+    private func nextBreakLabel(at date: Date) -> String {
+        guard let next = appState.runtimeState.nextReminderAt else { return "Scheduling..." }
+        if next.timeIntervalSince(date) <= 0 { return "Break time" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "H:mm"
+        return "Next break at \(formatter.string(from: next))"
+    }
+
+    private func secondsRemaining(at date: Date) -> Int {
+        guard let next = appState.runtimeState.nextReminderAt else { return 0 }
+        return max(0, Int(next.timeIntervalSince(date)))
+    }
+
+    private func intervalProgress(at date: Date) -> Double {
+        guard let next = appState.runtimeState.nextReminderAt else { return 0 }
+        let totalInterval = Double(appState.effectiveIntervalMinutes * 60)
+        guard totalInterval > 0 else { return 0 }
+        let remaining = next.timeIntervalSince(date)
+        if remaining <= 0 { return 1 }
+        return 1.0 - (remaining / totalInterval)
     }
 }

@@ -13,6 +13,8 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.9"
     SWIFT_STRICT_CONCURRENCY: targeted
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: 3BGHPQ6C3H
 
 targets:
   iCare:

@@ -40,7 +40,7 @@ struct WatchHomeView: View {
                 .font(.system(size: 28))
                 .foregroundStyle(ICareColors.brand)
 
-            Text("Open i care on\nyour iPhone to\nget started.")
+            Text("Open icare on\nyour iPhone to\nget started.")
                 .font(ICareTypography.body)
                 .foregroundStyle(ICareColors.textSecondary)
                 .multilineTextAlignment(.center)

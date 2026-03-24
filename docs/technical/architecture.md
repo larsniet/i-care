@@ -108,7 +108,32 @@ Implementation notes:
 - countdown state should be lightweight and local to the active session
 - completion should update persistent daily stats and trigger next scheduling pass
 
-### 5. Completion Tracker
+### 5. Focus Filter Integration
+
+Allows the user to link i care reminders to iOS Focus modes (Work, Study, custom, etc.) via the AppIntents `SetFocusFilterIntent` API (iOS 16+).
+
+User-facing flow:
+
+1. Open Settings → Focus → [Work / any mode] → Focus Filters → i care
+2. Configure whether reminders are enabled during this Focus
+3. Optionally set a custom reminder interval that overrides the global setting
+4. When the Focus activates, the system calls the intent and i care adjusts automatically
+5. When the Focus deactivates, the app reverts to manual settings
+
+Exposed parameters:
+
+- **Enable Reminders** (`Bool`, default `true`) – whether i care should send reminders during this Focus
+- **Custom Interval** (`Int?`, optional) – overrides the user's normal interval for this Focus only
+
+Implementation notes:
+
+- The intent writes a `FocusFilterState` to the shared App Group `UserDefaults`
+- `AppState` reads the focus state on launch and foreground transitions
+- When `overrideActive` is `true`, the focus filter values take precedence over manual settings for scheduling decisions
+- When the Focus deactivates, `perform()` is called with default parameters, resetting `overrideActive` to `false`
+- The Watch sees the updated scheduling behavior through the shared `UserDefaults`
+
+### 6. Completion Tracker
 
 Owns lightweight usage data:
 
@@ -123,13 +148,14 @@ Implementation notes:
 
 ## Recommended State Flow
 
-1. App loads persisted settings.
-2. Reminder Engine computes the next valid reminder.
-3. Notification Coordinator schedules the local notification.
-4. User taps notification on iPhone or Watch.
-5. Countdown Flow runs on the device that handled the action.
-6. Completion Tracker records success.
-7. Reminder Engine schedules the next reminder.
+1. App loads persisted settings and focus filter state.
+2. If a Focus Filter override is active, its values take precedence over manual settings.
+3. Reminder Engine computes the next valid reminder using the effective settings.
+4. Notification Coordinator schedules the local notification.
+5. User taps notification on iPhone or Watch.
+6. Countdown Flow runs on the device that handled the action.
+7. Completion Tracker records success.
+8. Reminder Engine schedules the next reminder.
 
 ## Persistence Strategy
 
@@ -159,6 +185,8 @@ EyeCare/
     Settings/
     ReminderStatus/
     Countdown/
+  Intents/
+    ICareRemindersFocusFilter
   Services/
     ReminderEngine/
     NotificationCoordinator/
@@ -204,3 +232,4 @@ Reason:
 - reminder rescheduling after reboot must be explicitly verified
 - permission-denied and paused states can become confusing if not modeled cleanly
 - watch sync can be overbuilt if the shared-state boundary is not kept small
+- Focus Filter `perform()` runs out-of-process; the running app picks up changes on foreground, not instantly

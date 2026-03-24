@@ -7,12 +7,14 @@ struct OnboardingHeader: View {
     var body: some View {
         HStack {
             HStack(spacing: 6) {
-                Image(systemName: "leaf.fill")
-                    .font(.system(size: 14))
-                Text("i care")
+                Image("AppLogo")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 22, height: 22)
+                Text("icare")
                     .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(ICareColors.brand)
             }
-            .foregroundStyle(ICareColors.brand)
 
             Spacer()
 
