@@ -29,7 +29,10 @@ enum NotificationAction: Sendable {
 final class AppState: ObservableObject {
 
     @Published var settings: ReminderSettings {
-        didSet { onSettingsChanged() }
+        didSet {
+            guard !isSyncingFromRemote else { return }
+            onSettingsChanged()
+        }
     }
     @Published var runtimeState: ReminderRuntimeState {
         didSet { SettingsStore.save(runtimeState) }
@@ -37,14 +40,23 @@ final class AppState: ObservableObject {
     @Published var todaySummary: DailySummary
     @Published var notificationAuthorizationStatus: NotificationAuthorizationStatus
     @Published var hasCompletedOnboarding: Bool {
-        didSet { SettingsStore.saveOnboardingCompleted(hasCompletedOnboarding) }
+        didSet {
+            SettingsStore.saveOnboardingCompleted(hasCompletedOnboarding)
+            if !isSyncingFromRemote {
+                sendSyncContext()
+            }
+        }
     }
     @Published var pendingAction: NotificationAction?
+    @Published var breakStartedAt: Date?
     @Published var focusFilterState: FocusFilterState {
         didSet { onFocusFilterChanged() }
     }
 
     let notificationCoordinator: NotificationCoordinator
+    private let syncManager: WatchSyncManager
+    private var isSyncingFromRemote = false
+    private var hasCheckedNotificationStatus = false
 
     // MARK: - Computed
 
@@ -71,7 +83,9 @@ final class AppState: ObservableObject {
     var currentStatus: ReminderStatus {
         if !effectiveRemindersEnabled { return .inactive }
         if runtimeState.isPaused { return .paused }
-        if notificationAuthorizationStatus != .authorized { return .blocked }
+        if hasCheckedNotificationStatus && notificationAuthorizationStatus != .authorized {
+            return .blocked
+        }
         return .active
     }
 
@@ -80,6 +94,7 @@ final class AppState: ObservableObject {
     init() {
         let coordinator = NotificationCoordinator.shared
         self.notificationCoordinator = coordinator
+        self.syncManager = WatchSyncManager.shared
 
         self.settings = SettingsStore.loadSettings()
         self.runtimeState = SettingsStore.loadRuntimeState()
@@ -90,6 +105,35 @@ final class AppState: ObservableObject {
 
         coordinator.registerCategories()
         bindNotificationActions(coordinator)
+        #if os(iOS)
+        syncManager.onSessionActivated = { [weak self] in
+            self?.sendSyncContext()
+        }
+        syncManager.contextProvider = { [weak self] in
+            guard let self else { return [:] }
+            return self.buildContextDict()
+        }
+        syncManager.onCommandReceived = { [weak self] command, payload in
+            guard let self else { return }
+            switch command {
+            case "pause": self.pause()
+            case "resume": self.resume()
+            case "reset": self.resetTimer()
+            case "startBreak":
+                if let ts = payload["breakStartedAt"] as? TimeInterval {
+                    self.breakStartedAt = Date(timeIntervalSince1970: ts)
+                } else if self.breakStartedAt == nil {
+                    self.breakStartedAt = Date()
+                }
+                self.pendingAction = .startBreak
+            default: break
+            }
+        }
+        #endif
+        #if os(watchOS)
+        bindSyncManager()
+        #endif
+        syncManager.activate()
 
         Task { [weak self] in
             guard let self else { return }
@@ -102,6 +146,29 @@ final class AppState: ObservableObject {
 
     func refreshNotificationStatus() async {
         notificationAuthorizationStatus = await notificationCoordinator.currentStatus()
+        hasCheckedNotificationStatus = true
+        sendSyncContext()
+    }
+
+    func refreshFromStore() {
+        let loadedOnboarding = SettingsStore.loadOnboardingCompleted()
+        if loadedOnboarding != hasCompletedOnboarding {
+            hasCompletedOnboarding = loadedOnboarding
+        }
+
+        let loadedSettings = SettingsStore.loadSettings()
+        if loadedSettings != settings {
+            settings = loadedSettings
+        }
+
+        let loadedRuntime = SettingsStore.loadRuntimeState()
+        if loadedRuntime != runtimeState {
+            runtimeState = loadedRuntime
+        }
+
+        todaySummary = CompletionTracker.loadTodaySummary()
+
+        refreshFocusFilterState()
     }
 
     func refreshFocusFilterState() {
@@ -136,6 +203,7 @@ final class AppState: ObservableObject {
         }
         runtimeState.nextReminderAt = first
         notificationCoordinator.scheduleReminders(at: dates, settings: effectiveSettings)
+        sendSyncContext()
     }
 
     func completeBreak(type: BreakCompletionType, device: DeviceType = .iphone) {
@@ -145,6 +213,7 @@ final class AppState: ObservableObject {
             runtimeState.lastReminderFiredAt = Date()
         }
         scheduleReminders(force: true)
+        sendSyncContext()
     }
 
     func snooze() {
@@ -161,6 +230,16 @@ final class AppState: ObservableObject {
         dates.append(contentsOf: rest)
         notificationCoordinator.scheduleReminders(at: dates, settings: effectiveSettings)
         SettingsStore.save(runtimeState)
+        sendSyncContext()
+    }
+
+    func startBreak() {
+        let now = Date()
+        breakStartedAt = now
+        sendSyncContext()
+        syncManager.sendCommand("startBreak", payload: [
+            "breakStartedAt": now.timeIntervalSince1970
+        ])
     }
 
     func resetTimer() {
@@ -171,19 +250,56 @@ final class AppState: ObservableObject {
     func pause() {
         runtimeState.isPaused = true
         notificationCoordinator.cancelPendingReminders()
+        sendSyncContext()
     }
 
     func resume() {
         runtimeState.isPaused = false
         runtimeState.pausedUntil = nil
         scheduleReminders(force: true)
+        sendSyncContext()
     }
 
     // MARK: - Private
 
+    private func sendSyncContext() {
+        syncManager.sendContext(
+            settings: settings,
+            onboarded: hasCompletedOnboarding,
+            notificationsAuthorized: notificationAuthorizationStatus == .authorized,
+            isPaused: runtimeState.isPaused,
+            nextReminderAt: runtimeState.nextReminderAt,
+            breakStartedAt: breakStartedAt
+        )
+    }
+
+    #if os(iOS)
+    fileprivate func buildContextDict() -> [String: Any] {
+        var context: [String: Any] = [
+            "onboarded": hasCompletedOnboarding,
+            "notificationsAuthorized": notificationAuthorizationStatus == .authorized,
+            "isPaused": runtimeState.isPaused,
+        ]
+        if let data = try? JSONEncoder().encode(settings) {
+            context["settings"] = data
+        }
+        if let date = runtimeState.nextReminderAt {
+            context["nextReminderAt"] = date.timeIntervalSince1970
+        }
+        if let date = breakStartedAt {
+            context["breakStartedAt"] = date.timeIntervalSince1970
+        }
+        return context
+    }
+    #endif
+
     private func onSettingsChanged() {
         SettingsStore.save(settings)
-        scheduleReminders(force: true)
+        Task { [weak self] in
+            guard let self else { return }
+            self.scheduleReminders(force: true)
+            self.sendSyncContext()
+        }
     }
 
     private func onFocusFilterChanged() {
@@ -199,6 +315,60 @@ final class AppState: ObservableObject {
         }
         return effective
     }
+
+    #if os(watchOS)
+    private func bindSyncManager() {
+        syncManager.onContextReceived = { [weak self] settings, onboarded, notificationsAuthorized, isPaused, nextReminderAt, breakStartedAt in
+            guard let self else { return }
+            self.isSyncingFromRemote = true
+
+            if onboarded != self.hasCompletedOnboarding {
+                self.hasCompletedOnboarding = onboarded
+            }
+            if settings != self.settings {
+                self.settings = settings
+                SettingsStore.save(settings)
+            }
+            let syncedStatus: NotificationAuthorizationStatus = notificationsAuthorized ? .authorized : .denied
+            if syncedStatus != self.notificationAuthorizationStatus {
+                self.notificationAuthorizationStatus = syncedStatus
+                self.hasCheckedNotificationStatus = true
+            }
+            if isPaused != self.runtimeState.isPaused {
+                self.runtimeState.isPaused = isPaused
+            }
+            if nextReminderAt != self.runtimeState.nextReminderAt {
+                self.runtimeState.nextReminderAt = nextReminderAt
+            }
+            if breakStartedAt != self.breakStartedAt {
+                self.breakStartedAt = breakStartedAt
+                if let started = breakStartedAt {
+                    let elapsed = Date().timeIntervalSince(started)
+                    let duration = Double(self.settings.breakDurationSeconds)
+                    if elapsed < duration {
+                        self.pendingAction = .startBreak
+                    } else {
+                        self.breakStartedAt = nil
+                    }
+                }
+            }
+
+            self.isSyncingFromRemote = false
+        }
+
+        syncManager.onCommandReceived = { [weak self] command, payload in
+            guard let self else { return }
+            if command == "startBreak" {
+                if let ts = payload["breakStartedAt"] as? TimeInterval {
+                    self.breakStartedAt = Date(timeIntervalSince1970: ts)
+                } else if self.breakStartedAt == nil {
+                    self.breakStartedAt = Date()
+                }
+                self.pendingAction = .startBreak
+            }
+        }
+    }
+    #endif
 
     private func bindNotificationActions(_ coordinator: NotificationCoordinator) {
         coordinator.onStartBreak = { [weak self] in

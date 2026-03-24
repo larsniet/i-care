@@ -1,11 +1,9 @@
 import SwiftUI
 
-struct HomeActiveContent: View {
+struct HomeActiveRing: View {
     @EnvironmentObject private var appState: AppState
-    var onStartBreak: (() -> Void)?
-
-    private let ringSize: CGFloat = 260
-    private let ringWidth: CGFloat = 8
+    let ringSize: CGFloat
+    let ringWidth: CGFloat
 
     private var isOutsideActiveHours: Bool {
         guard let next = appState.runtimeState.nextReminderAt else { return false }
@@ -15,63 +13,15 @@ struct HomeActiveContent: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: ICareSpacing.lg)
-
-            if isOutsideActiveHours {
-                doneForTodayContent
-            } else {
-                countdownContent
-            }
-
-            Spacer(minLength: ICareSpacing.xl)
-
-            breaksCard
-                .padding(.horizontal, ICareSpacing.lg)
-                .padding(.bottom, ICareSpacing.base)
-
-            HStack(spacing: ICareSpacing.sm) {
-                if !isOutsideActiveHours {
-                    Button(action: { appState.resetTimer() }) {
-                        HStack(spacing: ICareSpacing.xs) {
-                            Image(systemName: "arrow.counterclockwise")
-                                .font(.system(size: 13, weight: .medium))
-                            Text("Reset")
-                        }
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(ICareColors.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(ICareColors.separator.opacity(0.6))
-                        .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                Button(action: { appState.pause() }) {
-                    HStack(spacing: ICareSpacing.xs) {
-                        Image(systemName: "pause.fill")
-                            .font(.system(size: 11))
-                        Text("Pause")
-                    }
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(ICareColors.textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(ICareColors.separator.opacity(0.6))
-                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, ICareSpacing.lg)
-            .padding(.bottom, ICareSpacing.base)
+        if isOutsideActiveHours {
+            doneForTodayRing
+        } else {
+            countdownRing
         }
     }
 
-    // MARK: - Countdown Content
-
-    private var countdownContent: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
+    private var countdownRing: some View {
+        TimelineView(.periodic(from: .distantPast, by: 1)) { context in
             let remaining = secondsRemaining(at: context.date)
             let progress = intervalProgress(at: context.date)
 
@@ -106,9 +56,7 @@ struct HomeActiveContent: View {
         }
     }
 
-    // MARK: - Done For Today
-
-    private var doneForTodayContent: some View {
+    private var doneForTodayRing: some View {
         ZStack {
             ProgressRing(
                 progress: 1.0,
@@ -136,6 +84,12 @@ struct HomeActiveContent: View {
         }
     }
 
+    // MARK: - Labels
+
+    private var statusLabel: String {
+        appState.focusFilterState.overrideActive ? "FOCUS MODE ACTIVE" : "REMINDERS ACTIVE"
+    }
+
     private var resumesLabel: String {
         guard let next = appState.runtimeState.nextReminderAt else { return "" }
         let formatter = DateFormatter()
@@ -145,46 +99,6 @@ struct HomeActiveContent: View {
         }
         formatter.dateFormat = "EEEE 'at' H:mm"
         return "Resumes \(formatter.string(from: next))"
-    }
-
-    // MARK: - Status
-
-    private var statusLabel: String {
-        if appState.focusFilterState.overrideActive {
-            return "FOCUS MODE ACTIVE"
-        }
-        return "REMINDERS ACTIVE"
-    }
-
-    // MARK: - Breaks Card
-
-    private var breaksCard: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(breakCountText)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(ICareColors.textPrimary)
-                Text("COMPLETED TODAY")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(ICareColors.textTertiary)
-                    .tracking(1)
-            }
-
-            Spacer()
-
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 32))
-                .foregroundStyle(ICareColors.brandMuted, ICareColors.brand.opacity(0.15))
-                .symbolRenderingMode(.palette)
-        }
-        .padding(ICareSpacing.base)
-        .background(ICareColors.surfaceRaised)
-        .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.lg))
-    }
-
-    private var breakCountText: String {
-        let n = appState.todaySummary.completedBreakCount
-        return n == 1 ? "1 break" : "\(n) breaks"
     }
 
     // MARK: - Time Helpers
@@ -215,5 +129,76 @@ struct HomeActiveContent: View {
         let remaining = next.timeIntervalSince(date)
         if remaining <= 0 { return 1 }
         return 1.0 - (remaining / totalInterval)
+    }
+}
+
+// MARK: - Active Buttons
+
+struct HomeActiveButtons: View {
+    @EnvironmentObject private var appState: AppState
+    var onStartBreak: (() -> Void)?
+
+    private var isOutsideActiveHours: Bool {
+        guard let next = appState.runtimeState.nextReminderAt else { return false }
+        let remaining = next.timeIntervalSinceNow
+        let intervalSeconds = Double(appState.effectiveIntervalMinutes * 60)
+        return remaining > intervalSeconds * 1.5
+    }
+
+    var body: some View {
+        VStack(spacing: ICareSpacing.base) {
+            if !isOutsideActiveHours {
+                Button(action: { onStartBreak?() }) {
+                    HStack(spacing: ICareSpacing.sm) {
+                        Image(systemName: "eye")
+                            .font(.system(size: 14, weight: .medium))
+                        Text("Start Break")
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(ICareColors.brand)
+                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
+                }
+                .buttonStyle(.plain)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            HStack(spacing: ICareSpacing.sm) {
+                if !isOutsideActiveHours {
+                    Button(action: { appState.resetTimer() }) {
+                        HStack(spacing: ICareSpacing.xs) {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.system(size: 13, weight: .medium))
+                            Text("Reset")
+                        }
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(ICareColors.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(ICareColors.separator.opacity(0.6))
+                        .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
+                    }
+                    .buttonStyle(.plain)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+                }
+
+                Button(action: { appState.pause() }) {
+                    HStack(spacing: ICareSpacing.xs) {
+                        Image(systemName: "pause.fill")
+                            .font(.system(size: 11))
+                        Text("Pause")
+                    }
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(ICareColors.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(ICareColors.separator.opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 }

@@ -43,9 +43,25 @@ struct HomeView: View {
                 break
             }
         }
+        .onReceive(
+            NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+        ) { _ in
+            if let started = appState.breakStartedAt, !showCountdown {
+                let elapsed = Date().timeIntervalSince(started)
+                let duration = Double(appState.settings.breakDurationSeconds)
+                if elapsed < duration {
+                    showCountdown = true
+                } else {
+                    appState.breakStartedAt = nil
+                }
+            }
+        }
     }
 
     // MARK: - Focus Tab
+
+    private let ringSize: CGFloat = 260
+    private let ringWidth: CGFloat = 8
 
     private var focusTab: some View {
         ZStack(alignment: .top) {
@@ -56,21 +72,90 @@ struct HomeView: View {
                     .padding(.horizontal, ICareSpacing.lg)
                     .padding(.top, ICareSpacing.base)
 
-                Group {
-                    switch appState.currentStatus {
-                    case .active:
-                        HomeActiveContent(onStartBreak: { showCountdown = true })
-                    case .paused:
-                        HomePausedContent()
-                    case .blocked:
-                        HomeBlockedContent()
-                    case .inactive:
-                        HomeInactiveContent()
-                    }
-                }
-                .animation(ICareAnimation.stateChange, value: appState.currentStatus)
+                focusDashboard
             }
         }
+    }
+
+    private var focusDashboard: some View {
+        GeometryReader { geo in
+            let buttonAreaHeight: CGFloat = 180
+            let ringCenterY = (geo.size.height - buttonAreaHeight) / 2
+
+            ZStack(alignment: .top) {
+                ringView
+                    .frame(width: geo.size.width, height: ringSize)
+                    .position(x: geo.size.width / 2, y: ringCenterY)
+
+                VStack(spacing: ICareSpacing.base) {
+                    if appState.currentStatus == .active || appState.currentStatus == .paused {
+                        breaksCard
+                            .padding(.horizontal, ICareSpacing.lg)
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    }
+
+                    bottomButtons
+                        .padding(.horizontal, ICareSpacing.lg)
+                }
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, ICareSpacing.base)
+            }
+            .animation(.easeInOut(duration: 0.35), value: appState.currentStatus)
+        }
+    }
+
+    @ViewBuilder
+    private var ringView: some View {
+        switch appState.currentStatus {
+        case .active:
+            HomeActiveRing(ringSize: ringSize, ringWidth: ringWidth)
+        case .paused:
+            HomePausedRing(ringSize: ringSize, ringWidth: ringWidth)
+        case .blocked:
+            HomeBlockedRing(ringSize: ringSize, ringWidth: ringWidth)
+        case .inactive:
+            HomeInactiveRing(ringSize: ringSize, ringWidth: ringWidth)
+        }
+    }
+
+    @ViewBuilder
+    private var bottomButtons: some View {
+        switch appState.currentStatus {
+        case .active:
+            HomeActiveButtons(onStartBreak: {
+                appState.startBreak()
+                showCountdown = true
+            })
+        case .paused:
+            HomePausedButtons()
+        case .blocked:
+            HomeBlockedButtons()
+        case .inactive:
+            HomeInactiveButtons()
+        }
+    }
+
+    private var breaksCard: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(appState.todaySummary.completedBreakCount == 1
+                     ? "1 break" : "\(appState.todaySummary.completedBreakCount) breaks")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(ICareColors.textPrimary)
+                Text("COMPLETED TODAY")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(ICareColors.textTertiary)
+                    .tracking(1)
+            }
+            Spacer()
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 32))
+                .foregroundStyle(ICareColors.brandMuted, ICareColors.brand.opacity(0.15))
+                .symbolRenderingMode(.palette)
+        }
+        .padding(ICareSpacing.base)
+        .background(ICareColors.surfaceRaised)
+        .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.lg))
     }
 
     // MARK: - Header
@@ -110,63 +195,3 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Inactive Content
-
-private struct HomeInactiveContent: View {
-    @EnvironmentObject private var appState: AppState
-
-    private let ringSize: CGFloat = 260
-    private let ringWidth: CGFloat = 8
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: ICareSpacing.lg)
-
-            ZStack {
-                ProgressRing(
-                    progress: 0,
-                    size: ringSize,
-                    trackWidth: ringWidth,
-                    fillWidth: ringWidth,
-                    trackColor: ICareColors.separator,
-                    fillColor: ICareColors.brand
-                )
-                .opacity(0.3)
-
-                VStack(spacing: ICareSpacing.sm) {
-                    Text("INACTIVE")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(ICareColors.textTertiary)
-                        .tracking(1.5)
-
-                    Image(systemName: "moon.zzz")
-                        .font(.system(size: 48, weight: .ultraLight))
-                        .foregroundStyle(ICareColors.textTertiary)
-
-                    Text("Reminders are turned off")
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundStyle(ICareColors.textSecondary)
-                }
-            }
-
-            Spacer(minLength: ICareSpacing.xl)
-
-            Button(action: { appState.settings.remindersEnabled = true }) {
-                HStack(spacing: ICareSpacing.sm) {
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 12))
-                    Text("Turn On Reminders")
-                }
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(ICareColors.brand)
-                .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, ICareSpacing.lg)
-            .padding(.bottom, ICareSpacing.base)
-        }
-    }
-}

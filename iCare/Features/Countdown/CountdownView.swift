@@ -1,4 +1,6 @@
+import AudioToolbox
 import SwiftUI
+import UIKit
 
 struct CountdownView: View {
     @EnvironmentObject private var appState: AppState
@@ -9,6 +11,8 @@ struct CountdownView: View {
     @State private var isRunning = true
     @State private var isComplete = false
     @State private var didLoadDuration = false
+
+    private let hapticEngine = UINotificationFeedbackGenerator()
 
     private var progress: Double {
         1.0 - (Double(remainingSeconds) / Double(totalSeconds))
@@ -65,6 +69,7 @@ struct CountdownView: View {
                 if didLoadDuration, !isComplete {
                     SecondaryButton(title: "Skip") {
                         isRunning = false
+                        appState.breakStartedAt = nil
                         appState.completeBreak(type: .skipped)
                         dismiss()
                     }
@@ -76,8 +81,16 @@ struct CountdownView: View {
             guard !didLoadDuration else { return }
             let duration = max(appState.settings.breakDurationSeconds, 1)
             totalSeconds = duration
-            remainingSeconds = duration
+            if let started = appState.breakStartedAt {
+                let elapsed = Int(Date().timeIntervalSince(started))
+                remainingSeconds = max(0, duration - elapsed)
+            } else {
+                remainingSeconds = duration
+            }
             didLoadDuration = true
+            if appState.settings.hapticsEnabled {
+                hapticEngine.prepare()
+            }
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             guard didLoadDuration, isRunning, !isComplete else { return }
@@ -86,6 +99,13 @@ struct CountdownView: View {
             if remainingSeconds == 0 {
                 isRunning = false
                 isComplete = true
+                if appState.settings.hapticsEnabled {
+                    hapticEngine.notificationOccurred(.success)
+                }
+                if appState.settings.soundEnabled {
+                    AudioServicesPlaySystemSound(1025)
+                }
+                appState.breakStartedAt = nil
                 appState.completeBreak(type: .completed)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                     dismiss()

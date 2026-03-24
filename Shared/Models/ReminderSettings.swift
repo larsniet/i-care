@@ -6,6 +6,7 @@ struct ReminderSettings: Codable, Equatable, Sendable {
     var hapticsEnabled: Bool = true
     var soundEnabled: Bool = false
     var weekdaysOnly: Bool = false
+    var activeHoursEnabled: Bool = true
     var activeStartHour: Int = 9
     var activeStartMinute: Int = 0
     var activeEndHour: Int = 17

@@ -1,8 +1,24 @@
+import WatchKit
 import SwiftUI
+import UserNotifications
 
-struct WatchNotificationView: View {
-    @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
+final class NotificationController: WKUserNotificationHostingController<WatchNotificationBody> {
+
+    private let appState = AppState()
+
+    override var body: WatchNotificationBody {
+        WatchNotificationBody(appState: appState)
+    }
+
+    override func didReceive(_ notification: UNNotification) {
+        if appState.settings.hapticsEnabled {
+            WKInterfaceDevice.current().play(.notification)
+        }
+    }
+}
+
+struct WatchNotificationBody: View {
+    @ObservedObject var appState: AppState
 
     var body: some View {
         NavigationStack {
@@ -39,10 +55,16 @@ struct WatchNotificationView: View {
                 }
                 .buttonStyle(.plain)
 
-                SecondaryButton(title: "Snooze") {
+                Button {
                     appState.snooze()
-                    dismiss()
+                } label: {
+                    Text("Snooze")
+                        .font(ICareTypography.headline)
+                        .foregroundStyle(ICareColors.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 36)
                 }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, ICareSpacing.md)
             .padding(.vertical, ICareSpacing.sm)

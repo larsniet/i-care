@@ -3,7 +3,12 @@ import SwiftUI
 struct ScheduleSetupStep: View {
     @EnvironmentObject private var appState: AppState
 
-    @State private var activeHoursEnabled = true
+    private var activeHoursEnabled: Binding<Bool> {
+        Binding(
+            get: { appState.settings.activeHoursEnabled },
+            set: { appState.settings.activeHoursEnabled = $0 }
+        )
+    }
 
     private let intervalOptions = [15, 20, 30, 45]
     private let breakOptions = [10, 20, 30]
@@ -70,13 +75,13 @@ struct ScheduleSetupStep: View {
                         title: "Active Hours",
                         subtitle: "Only notify during work",
                         trailing: {
-                            Toggle("", isOn: $activeHoursEnabled)
+                            Toggle("", isOn: activeHoursEnabled)
                                 .labelsHidden()
                                 .tint(ICareColors.brand)
                         }
                     )
 
-                    if activeHoursEnabled {
+                    if activeHoursEnabled.wrappedValue {
                         HStack(spacing: ICareSpacing.sm) {
                             timeBlock(label: "START", binding: startTimeBinding)
                             Image(systemName: "arrow.right")

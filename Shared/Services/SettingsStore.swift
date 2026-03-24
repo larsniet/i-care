@@ -2,15 +2,12 @@ import Foundation
 
 enum SettingsStore {
 
-    private static let suiteName = "group.com.icare.shared"
     private static let settingsKey = "icare.settings"
     private static let runtimeKey = "icare.runtime_state"
     private static let onboardingKey = "icare.onboarding_completed"
     private static let focusFilterKey = "icare.focus_filter_state"
 
-    private static var defaults: UserDefaults {
-        UserDefaults(suiteName: suiteName) ?? .standard
-    }
+    private static var defaults: UserDefaults { .standard }
 
     // MARK: - Settings
 

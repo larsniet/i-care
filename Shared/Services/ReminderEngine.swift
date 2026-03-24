@@ -39,6 +39,12 @@ enum ReminderEngine {
                 }
             }
 
+            if !settings.activeHoursEnabled {
+                results.append(candidate)
+                candidate = candidate.addingTimeInterval(interval)
+                continue
+            }
+
             let minuteOfDay = calendar.component(.hour, from: candidate) * 60
                 + calendar.component(.minute, from: candidate)
             let startMinute = settings.activeStartHour * 60 + settings.activeStartMinute

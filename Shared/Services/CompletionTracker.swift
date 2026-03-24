@@ -2,14 +2,11 @@ import Foundation
 
 enum CompletionTracker {
 
-    private static let suiteName = "group.com.icare.shared"
     private static let summaryKey = "icare.daily_summary"
     private static let recordsKey = "icare.break_records"
     private static let maxRecords = 50
 
-    private static var defaults: UserDefaults {
-        UserDefaults(suiteName: suiteName) ?? .standard
-    }
+    private static var defaults: UserDefaults { .standard }
 
     // MARK: - Daily Summary
 
@@ -55,6 +52,11 @@ enum CompletionTracker {
 
         save(summary)
         appendRecord(record)
+    }
+
+    static func loadTodayRecords() -> [BreakRecord] {
+        let calendar = Calendar.current
+        return loadRecords().filter { calendar.isDateInToday($0.completedAt) }
     }
 
     // MARK: - Private

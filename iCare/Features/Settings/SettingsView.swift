@@ -29,17 +29,22 @@ struct SettingsView: View {
                 }
 
                 Section("Active Hours") {
-                    DatePicker(
-                        "Start",
-                        selection: activeStartTimeBinding,
-                        displayedComponents: .hourAndMinute
-                    )
+                    Toggle("Limit to Active Hours", isOn: activeHoursEnabledBinding)
+                        .tint(ICareColors.brand)
 
-                    DatePicker(
-                        "End",
-                        selection: activeEndTimeBinding,
-                        displayedComponents: .hourAndMinute
-                    )
+                    if appState.settings.activeHoursEnabled {
+                        DatePicker(
+                            "Start",
+                            selection: activeStartTimeBinding,
+                            displayedComponents: .hourAndMinute
+                        )
+
+                        DatePicker(
+                            "End",
+                            selection: activeEndTimeBinding,
+                            displayedComponents: .hourAndMinute
+                        )
+                    }
 
                     Toggle("Weekdays Only", isOn: weekdaysOnlyBinding)
                         .tint(ICareColors.brand)
@@ -151,6 +156,17 @@ struct SettingsView: View {
                 var s = appState.settings
                 s.activeEndHour = parts.hour ?? 0
                 s.activeEndMinute = parts.minute ?? 0
+                appState.settings = s
+            }
+        )
+    }
+
+    private var activeHoursEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { appState.settings.activeHoursEnabled },
+            set: { newValue in
+                var s = appState.settings
+                s.activeHoursEnabled = newValue
                 appState.settings = s
             }
         )

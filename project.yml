@@ -4,7 +4,7 @@ options:
   deploymentTarget:
     iOS: "17.0"
     watchOS: "10.0"
-  xcodeVersion: "16.0"
+  xcodeVersion: "26.3"
   generateEmptyDirectories: false
 
 settings:
@@ -15,6 +15,7 @@ settings:
     SWIFT_STRICT_CONCURRENCY: targeted
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: 3BGHPQ6C3H
+    ASSETCATALOG_COMPILER_SKIP_APP_STORE_DEPLOYMENT: "YES"
 
 targets:
   iCare:

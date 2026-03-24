@@ -1,7 +1,6 @@
 import SwiftUI
-import UIKit
 
-struct HomeBlockedRing: View {
+struct HomeInactiveRing: View {
     let ringSize: CGFloat
     let ringWidth: CGFloat
 
@@ -13,42 +12,39 @@ struct HomeBlockedRing: View {
                 trackWidth: ringWidth,
                 fillWidth: ringWidth,
                 trackColor: ICareColors.separator,
-                fillColor: ICareColors.statusBlocked
+                fillColor: ICareColors.brand
             )
             .opacity(0.3)
 
             VStack(spacing: ICareSpacing.sm) {
-                Text("NOTIFICATIONS OFF")
+                Text("INACTIVE")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(ICareColors.statusBlocked)
+                    .foregroundStyle(ICareColors.textTertiary)
                     .tracking(1.5)
 
-                Image(systemName: "bell.slash")
+                Image(systemName: "moon.zzz")
                     .font(.system(size: 48, weight: .ultraLight))
-                    .foregroundStyle(ICareColors.statusBlocked.opacity(0.6))
+                    .foregroundStyle(ICareColors.textTertiary)
 
-                Text("Enable notifications to\nreceive break reminders")
+                Text("Reminders are turned off")
                     .font(.system(size: 15, weight: .regular))
                     .foregroundStyle(ICareColors.textSecondary)
-                    .multilineTextAlignment(.center)
             }
         }
     }
 }
 
-// MARK: - Blocked Buttons
+// MARK: - Inactive Buttons
 
-struct HomeBlockedButtons: View {
+struct HomeInactiveButtons: View {
+    @EnvironmentObject private var appState: AppState
+
     var body: some View {
-        Button {
-            if let url = URL(string: UIApplication.openSettingsURLString) {
-                UIApplication.shared.open(url)
-            }
-        } label: {
+        Button(action: { appState.settings.remindersEnabled = true }) {
             HStack(spacing: ICareSpacing.sm) {
-                Image(systemName: "gear")
-                    .font(.system(size: 14))
-                Text("Open Settings")
+                Image(systemName: "play.fill")
+                    .font(.system(size: 12))
+                Text("Turn On Reminders")
             }
             .font(.system(size: 16, weight: .semibold))
             .foregroundStyle(.white)
