@@ -56,6 +56,17 @@ jobs:
       - name: Set MATCH_REPO
         run: echo "MATCH_REPO=${{ secrets.MATCH_REPO }}" | tr -d '\n\r' >> "$GITHUB_ENV"
 
+      - name: Create CI keychain
+        env:
+          KEYCHAIN_PASSWORD: ci_build_temp
+        run: |
+          security create-keychain -p "$KEYCHAIN_PASSWORD" ci_build.keychain
+          security default-keychain -s ci_build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" ci_build.keychain
+          security set-keychain-settings -t 3600 -u ci_build.keychain
+          echo "MATCH_KEYCHAIN_NAME=ci_build.keychain" >> "$GITHUB_ENV"
+          echo "MATCH_KEYCHAIN_PASSWORD=ci_build_temp" >> "$GITHUB_ENV"
+
       - name: Generate Xcode project
         run: |
           if command -v xcodegen &>/dev/null; then
