@@ -14,6 +14,8 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
     #if os(watchOS)
     var onContextReceived: (@MainActor (_ settings: ReminderSettings, _ onboarded: Bool, _ notificationsAuthorized: Bool, _ isPaused: Bool, _ nextReminderAt: Date?, _ breakStartedAt: Date?) -> Void)?
     var onCommandReceived: (@MainActor (_ command: String, _ payload: [String: Any]) -> Void)?
+    private(set) var isBound = false
+    func markBound() { isBound = true }
     #endif
 
     private override init() {
@@ -37,7 +39,9 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
         breakStartedAt: Date? = nil
     ) {
         #if os(iOS)
-        guard WCSession.default.activationState == .activated else { return }
+        guard WCSession.default.activationState == .activated,
+              WCSession.default.isPaired,
+              WCSession.default.isWatchAppInstalled else { return }
 
         let context = buildContext(
             settings: settings,
@@ -76,9 +80,7 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
         if let date = nextReminderAt {
             context["nextReminderAt"] = date.timeIntervalSince1970
         }
-        if let date = breakStartedAt {
-            context["breakStartedAt"] = date.timeIntervalSince1970
-        }
+        context["breakStartedAt"] = breakStartedAt?.timeIntervalSince1970 ?? 0
         return context
     }
     #endif
@@ -86,8 +88,11 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
     // MARK: - Bidirectional Commands
 
     func sendCommand(_ command: String, payload: [String: Any] = [:]) {
-        guard WCSession.default.activationState == .activated,
-              WCSession.default.isReachable else { return }
+        guard WCSession.default.activationState == .activated else { return }
+        #if os(iOS)
+        guard WCSession.default.isPaired,
+              WCSession.default.isWatchAppInstalled else { return }
+        #endif
         var message: [String: Any] = ["command": command]
         message.merge(payload) { current, _ in current }
         WCSession.default.sendMessage(
@@ -187,8 +192,10 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
     ) {
         #if os(iOS)
         if message["request"] as? String == "state" {
-            let context = contextProvider?() ?? [:]
-            replyHandler(context)
+            DispatchQueue.main.async { [weak self] in
+                let context = self?.contextProvider?() ?? [:]
+                replyHandler(context)
+            }
         } else if let command = message["command"] as? String {
             Task { @MainActor in
                 onCommandReceived?(command, message)
@@ -238,7 +245,7 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
             nextReminderAt = Date(timeIntervalSince1970: ts)
         }
         var breakStartedAt: Date?
-        if let ts = context["breakStartedAt"] as? TimeInterval {
+        if let ts = context["breakStartedAt"] as? TimeInterval, ts > 0 {
             breakStartedAt = Date(timeIntervalSince1970: ts)
         }
         Task { @MainActor in

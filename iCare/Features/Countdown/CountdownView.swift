@@ -56,6 +56,9 @@ struct CountdownView: View {
         }
         .onDisappear {
             appState.notificationCoordinator.isShowingCountdown = false
+            if !isComplete && appState.breakStartedAt != nil {
+                appState.endBreak(type: .skipped, device: .iphone)
+            }
         }
         .onChange(of: appState.breakStartedAt) { _, newValue in
             if newValue == nil && !isComplete {

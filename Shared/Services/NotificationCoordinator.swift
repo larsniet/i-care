@@ -145,7 +145,14 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
         didReceive response: UNNotificationResponse,
         withCompletionHandler handler: @escaping () -> Void
     ) {
+        let id = response.notification.request.identifier
         let action = response.actionIdentifier
+
+        guard id.hasPrefix(Self.reminderIDPrefix) else {
+            handler()
+            return
+        }
+
         Task { @MainActor in
             switch action {
             case Self.startActionID, UNNotificationDefaultActionIdentifier:

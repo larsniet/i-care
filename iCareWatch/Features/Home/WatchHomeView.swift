@@ -37,6 +37,8 @@ struct WatchHomeView: View {
                     let duration = Double(appState.settings.breakDurationSeconds)
                     if elapsed < duration {
                         showCountdown = true
+                    } else {
+                        appState.breakStartedAt = nil
                     }
                 }
             }
@@ -83,17 +85,12 @@ struct WatchHomeView: View {
 
     private var mainDashboard: some View {
         GeometryReader { geo in
-            let buttonAreaHeight: CGFloat = 110
-            let topInset: CGFloat = 20
-            let ringCenterY = hasBottomButtons
-                ? (geo.size.height - buttonAreaHeight + topInset) / 2
-                : (geo.size.height + topInset) / 2
+            let ringCenterY = geo.size.height * 0.38
 
-            ZStack(alignment: .top) {
+            ZStack {
                 ringContent
                     .frame(width: geo.size.width, height: 120)
                     .position(x: geo.size.width / 2, y: ringCenterY)
-                    .animation(.easeInOut(duration: 0.35), value: hasBottomButtons)
 
                 if hasBottomButtons {
                     VStack(spacing: ICareSpacing.xs) {
@@ -148,8 +145,8 @@ struct WatchHomeView: View {
                         }
                     }
                     .padding(.horizontal, ICareSpacing.base)
-                    .padding(.bottom, ICareSpacing.sm)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .padding(.bottom, 2)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }

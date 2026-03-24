@@ -120,15 +120,18 @@ final class AppState: ObservableObject {
             case "resume": self.resume()
             case "reset": self.resetTimer()
             case "startBreak":
+                let started: Date
                 if let ts = payload["breakStartedAt"] as? TimeInterval {
-                    self.breakStartedAt = Date(timeIntervalSince1970: ts)
-                } else if self.breakStartedAt == nil {
-                    self.breakStartedAt = Date()
+                    started = Date(timeIntervalSince1970: ts)
+                } else {
+                    started = Date()
                 }
-                if let started = self.breakStartedAt {
-                    let completeAt = started.addingTimeInterval(Double(self.settings.breakDurationSeconds))
-                    self.notificationCoordinator.scheduleBreakComplete(at: completeAt, soundEnabled: self.settings.soundEnabled)
-                }
+                let elapsed = Date().timeIntervalSince(started)
+                let dur = Double(self.settings.breakDurationSeconds)
+                guard elapsed < dur else { break }
+                self.breakStartedAt = started
+                let completeAt = started.addingTimeInterval(dur)
+                self.notificationCoordinator.scheduleBreakComplete(at: completeAt, soundEnabled: self.settings.soundEnabled)
                 self.pendingAction = .startBreak
             case "endBreak":
                 let wasActive = self.breakStartedAt != nil
@@ -143,7 +146,10 @@ final class AppState: ObservableObject {
         }
         #endif
         #if os(watchOS)
-        bindSyncManager()
+        if !syncManager.isBound {
+            bindSyncManager()
+            syncManager.markBound()
+        }
         #endif
         syncManager.activate()
 
@@ -311,9 +317,7 @@ final class AppState: ObservableObject {
         if let date = runtimeState.nextReminderAt {
             context["nextReminderAt"] = date.timeIntervalSince1970
         }
-        if let date = breakStartedAt {
-            context["breakStartedAt"] = date.timeIntervalSince1970
-        }
+        context["breakStartedAt"] = breakStartedAt?.timeIntervalSince1970 ?? 0
         return context
     }
     #endif
@@ -365,16 +369,24 @@ final class AppState: ObservableObject {
             if nextReminderAt != self.runtimeState.nextReminderAt {
                 self.runtimeState.nextReminderAt = nextReminderAt
             }
-            if breakStartedAt != self.breakStartedAt {
-                self.breakStartedAt = breakStartedAt
-                if let started = breakStartedAt {
-                    let elapsed = Date().timeIntervalSince(started)
-                    let duration = Double(self.settings.breakDurationSeconds)
-                    if elapsed < duration {
-                        self.pendingAction = .startBreak
-                    } else {
-                        self.breakStartedAt = nil
-                    }
+            if let started = breakStartedAt, started != self.breakStartedAt {
+                let elapsed = Date().timeIntervalSince(started)
+                let duration = Double(self.settings.breakDurationSeconds)
+                if elapsed < duration {
+                    self.breakStartedAt = started
+                    self.pendingAction = .startBreak
+                } else {
+                    self.breakStartedAt = nil
+                }
+            } else if breakStartedAt == nil, let current = self.breakStartedAt {
+                let elapsed = Date().timeIntervalSince(current)
+                let duration = Double(self.settings.breakDurationSeconds)
+                if elapsed >= duration {
+                    self.breakStartedAt = nil
+                } else {
+                    WatchSyncManager.shared.sendCommand("startBreak", payload: [
+                        "breakStartedAt": current.timeIntervalSince1970
+                    ])
                 }
             }
 
@@ -385,14 +397,25 @@ final class AppState: ObservableObject {
             guard let self else { return }
             switch command {
             case "startBreak":
+                let started: Date
                 if let ts = payload["breakStartedAt"] as? TimeInterval {
-                    self.breakStartedAt = Date(timeIntervalSince1970: ts)
-                } else if self.breakStartedAt == nil {
-                    self.breakStartedAt = Date()
+                    started = Date(timeIntervalSince1970: ts)
+                } else {
+                    started = Date()
                 }
+                let elapsed = Date().timeIntervalSince(started)
+                let duration = Double(self.settings.breakDurationSeconds)
+                guard elapsed < duration else { break }
+                self.breakStartedAt = started
                 self.pendingAction = .startBreak
             case "endBreak":
+                let wasActive = self.breakStartedAt != nil
                 self.breakStartedAt = nil
+                self.notificationCoordinator.cancelBreakComplete()
+                if wasActive {
+                    let type: BreakCompletionType = (payload["type"] as? String) == "completed" ? .completed : .skipped
+                    self.completeBreak(type: type, device: .iphone)
+                }
             default: break
             }
         }

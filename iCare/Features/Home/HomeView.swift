@@ -56,8 +56,14 @@ struct HomeView: View {
             }
         }
         .onChange(of: appState.breakStartedAt) { _, newValue in
-            if newValue != nil && !showCountdown {
-                showCountdown = true
+            if let started = newValue, !showCountdown {
+                let elapsed = Date().timeIntervalSince(started)
+                let duration = Double(appState.settings.breakDurationSeconds)
+                if elapsed < duration {
+                    showCountdown = true
+                } else {
+                    appState.breakStartedAt = nil
+                }
             }
         }
     }

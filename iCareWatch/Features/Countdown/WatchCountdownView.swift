@@ -30,6 +30,7 @@ struct WatchCountdownView: View {
                 }
             }
         }
+        .navigationBarBackButtonHidden(true)
         .onAppear {
             guard endDate == nil else { return }
             duration = max(1, appState.settings.breakDurationSeconds)
@@ -45,6 +46,11 @@ struct WatchCountdownView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                     WKInterfaceDevice.current().play(.click)
                 }
+            }
+        }
+        .onDisappear {
+            if !isComplete && appState.breakStartedAt != nil {
+                appState.endBreak(type: .skipped, device: .watch)
             }
         }
         .onChange(of: isComplete) { _, complete in
