@@ -21,21 +21,23 @@ struct WatchHomeView: View {
                 }
             }
             .navigationDestination(isPresented: $showCountdown) {
-                WatchCountdownView(
-                    breakDurationSeconds: appState.settings.breakDurationSeconds,
-                    hapticsEnabled: appState.settings.hapticsEnabled,
-                    breakStartedAt: appState.breakStartedAt,
-                    onComplete: { type in
-                        appState.breakStartedAt = nil
-                        appState.completeBreak(type: type, device: .watch)
-                    }
-                )
+                WatchCountdownView()
+                    .environmentObject(appState)
             }
             .onReceive(appState.$pendingAction) { action in
                 guard let action else { return }
                 appState.pendingAction = nil
                 if action == .startBreak {
                     showCountdown = true
+                }
+            }
+            .onChange(of: appState.breakStartedAt) { _, newValue in
+                if let started = newValue, !showCountdown {
+                    let elapsed = Date().timeIntervalSince(started)
+                    let duration = Double(appState.settings.breakDurationSeconds)
+                    if elapsed < duration {
+                        showCountdown = true
+                    }
                 }
             }
         }

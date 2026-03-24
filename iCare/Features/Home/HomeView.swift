@@ -46,14 +46,18 @@ struct HomeView: View {
         .onReceive(
             NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
         ) { _ in
-            if let started = appState.breakStartedAt, !showCountdown {
-                let elapsed = Date().timeIntervalSince(started)
-                let duration = Double(appState.settings.breakDurationSeconds)
-                if elapsed < duration {
-                    showCountdown = true
-                } else {
-                    appState.breakStartedAt = nil
-                }
+            guard let started = appState.breakStartedAt, !showCountdown else { return }
+            let elapsed = Date().timeIntervalSince(started)
+            let duration = Double(appState.settings.breakDurationSeconds)
+            if elapsed < duration {
+                showCountdown = true
+            } else {
+                appState.breakStartedAt = nil
+            }
+        }
+        .onChange(of: appState.breakStartedAt) { _, newValue in
+            if newValue != nil && !showCountdown {
+                showCountdown = true
             }
         }
     }

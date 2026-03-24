@@ -19,6 +19,7 @@ final class NotificationController: WKUserNotificationHostingController<WatchNot
 
 struct WatchNotificationBody: View {
     @ObservedObject var appState: AppState
+    @State private var showCountdown = false
 
     var body: some View {
         NavigationStack {
@@ -34,16 +35,9 @@ struct WatchNotificationBody: View {
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.85)
 
-                NavigationLink {
-                    WatchCountdownView(
-                        breakDurationSeconds: appState.settings.breakDurationSeconds,
-                        hapticsEnabled: appState.settings.hapticsEnabled,
-                        breakStartedAt: appState.breakStartedAt,
-                        onComplete: { type in
-                            appState.breakStartedAt = nil
-                            appState.completeBreak(type: type, device: .watch)
-                        }
-                    )
+                Button {
+                    appState.startBreak()
+                    showCountdown = true
                 } label: {
                     Text("Start")
                         .font(ICareTypography.headline)
@@ -69,6 +63,10 @@ struct WatchNotificationBody: View {
             .padding(.horizontal, ICareSpacing.md)
             .padding(.vertical, ICareSpacing.sm)
             .background(ICareColors.surface)
+            .navigationDestination(isPresented: $showCountdown) {
+                WatchCountdownView()
+                    .environmentObject(appState)
+            }
         }
     }
 }

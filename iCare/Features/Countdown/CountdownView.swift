@@ -6,111 +6,129 @@ struct CountdownView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
 
-    @State private var remainingSeconds: Int = 0
-    @State private var totalSeconds: Int = 1
-    @State private var isRunning = true
     @State private var isComplete = false
-    @State private var didLoadDuration = false
+    @State private var didStart = false
 
     private let hapticEngine = UINotificationFeedbackGenerator()
 
-    private var progress: Double {
-        1.0 - (Double(remainingSeconds) / Double(totalSeconds))
+    private var endDate: Date {
+        let started = appState.breakStartedAt ?? Date()
+        return started.addingTimeInterval(Double(appState.settings.breakDurationSeconds))
+    }
+
+    private var totalSeconds: Int {
+        max(1, appState.settings.breakDurationSeconds)
     }
 
     var body: some View {
         ZStack {
             ICareColors.surface.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Spacer()
+            if isComplete {
+                completedContent
+            } else if appState.breakStartedAt != nil {
+                TimelineView(.periodic(from: .distantPast, by: 1)) { context in
+                    let remaining = max(0, Int(endDate.timeIntervalSince(context.date)))
+                    let progress = 1.0 - (Double(remaining) / Double(totalSeconds))
 
-                if didLoadDuration {
-                    if isComplete {
-                        VStack(spacing: ICareSpacing.lg) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 48))
-                                .foregroundStyle(ICareColors.brand)
-
-                            Text("Break complete")
-                                .font(ICareTypography.title)
-                                .foregroundStyle(ICareColors.textPrimary)
-                        }
-                    } else {
-                        VStack(spacing: ICareSpacing.lg) {
-                            ZStack {
-                                ProgressRing(
-                                    progress: progress,
-                                    size: 200,
-                                    trackWidth: 2,
-                                    fillWidth: 3,
-                                    trackColor: ICareColors.brandMuted,
-                                    fillColor: ICareColors.brand
-                                )
-                                .animation(ICareAnimation.countdown, value: progress)
-
-                                Text("\(remainingSeconds)")
-                                    .font(ICareTypography.displayLarge)
-                                    .foregroundStyle(ICareColors.textPrimary)
-                                    .contentTransition(.numericText())
+                    countdownContent(remaining: remaining, progress: progress)
+                        .onChange(of: remaining) { _, newValue in
+                            if newValue <= 0 && !isComplete {
+                                finishBreak(type: .completed)
                             }
-
-                            Text("Look at something in the distance")
-                                .font(ICareTypography.body)
-                                .foregroundStyle(ICareColors.textSecondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, ICareSpacing.xl)
                         }
-                    }
-                }
-
-                Spacer()
-
-                if didLoadDuration, !isComplete {
-                    SecondaryButton(title: "Skip") {
-                        isRunning = false
-                        appState.breakStartedAt = nil
-                        appState.completeBreak(type: .skipped)
-                        dismiss()
-                    }
-                    .padding(.bottom, ICareSpacing.xl)
                 }
             }
         }
         .onAppear {
-            guard !didLoadDuration else { return }
-            let duration = max(appState.settings.breakDurationSeconds, 1)
-            totalSeconds = duration
-            if let started = appState.breakStartedAt {
-                let elapsed = Int(Date().timeIntervalSince(started))
-                remainingSeconds = max(0, duration - elapsed)
-            } else {
-                remainingSeconds = duration
-            }
-            didLoadDuration = true
+            guard !didStart else { return }
+            didStart = true
             if appState.settings.hapticsEnabled {
                 hapticEngine.prepare()
             }
         }
-        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            guard didLoadDuration, isRunning, !isComplete else { return }
-            guard remainingSeconds > 0 else { return }
-            remainingSeconds -= 1
-            if remainingSeconds == 0 {
-                isRunning = false
-                isComplete = true
-                if appState.settings.hapticsEnabled {
-                    hapticEngine.notificationOccurred(.success)
-                }
-                if appState.settings.soundEnabled {
-                    AudioServicesPlaySystemSound(1025)
-                }
-                appState.breakStartedAt = nil
-                appState.completeBreak(type: .completed)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    dismiss()
-                }
+        .onChange(of: appState.breakStartedAt) { _, newValue in
+            if newValue == nil && !isComplete {
+                dismiss()
             }
+        }
+    }
+
+    private func countdownContent(remaining: Int, progress: Double) -> some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            VStack(spacing: ICareSpacing.lg) {
+                ZStack {
+                    ProgressRing(
+                        progress: progress,
+                        size: 200,
+                        trackWidth: 2,
+                        fillWidth: 3,
+                        trackColor: ICareColors.brandMuted,
+                        fillColor: ICareColors.brand
+                    )
+                    .animation(ICareAnimation.countdown, value: progress)
+
+                    Text("\(remaining)")
+                        .font(ICareTypography.displayLarge)
+                        .foregroundStyle(ICareColors.textPrimary)
+                        .contentTransition(.numericText())
+                }
+
+                Text("Look at something in the distance")
+                    .font(ICareTypography.body)
+                    .foregroundStyle(ICareColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, ICareSpacing.xl)
+            }
+
+            Spacer()
+
+            SecondaryButton(title: "Skip") {
+                finishBreak(type: .skipped)
+            }
+            .padding(.bottom, ICareSpacing.xl)
+        }
+    }
+
+    private var completedContent: some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            VStack(spacing: ICareSpacing.lg) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(ICareColors.brand)
+
+                Text("Break complete")
+                    .font(ICareTypography.title)
+                    .foregroundStyle(ICareColors.textPrimary)
+            }
+
+            Spacer()
+        }
+    }
+
+    private func finishBreak(type: BreakCompletionType) {
+        guard !isComplete || type == .skipped else { return }
+        isComplete = true
+
+        if type == .completed {
+            if appState.settings.hapticsEnabled {
+                hapticEngine.notificationOccurred(.success)
+            }
+            if appState.settings.soundEnabled {
+                AudioServicesPlaySystemSound(1025)
+            }
+        }
+
+        #if os(iOS)
+        appState.endBreak(type: type, device: .iphone)
+        #endif
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + (type == .completed ? 1.5 : 0)) {
+            dismiss()
         }
     }
 }

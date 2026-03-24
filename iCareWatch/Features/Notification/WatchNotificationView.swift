@@ -3,6 +3,7 @@ import SwiftUI
 struct WatchNotificationView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
+    @State private var showCountdown = false
 
     var body: some View {
         NavigationStack {
@@ -18,16 +19,9 @@ struct WatchNotificationView: View {
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.85)
 
-                NavigationLink {
-                    WatchCountdownView(
-                        breakDurationSeconds: appState.settings.breakDurationSeconds,
-                        hapticsEnabled: appState.settings.hapticsEnabled,
-                        breakStartedAt: appState.breakStartedAt,
-                        onComplete: { type in
-                            appState.breakStartedAt = nil
-                            appState.completeBreak(type: type, device: .watch)
-                        }
-                    )
+                Button {
+                    appState.startBreak()
+                    showCountdown = true
                 } label: {
                     Text("Start")
                         .font(ICareTypography.headline)
@@ -47,6 +41,10 @@ struct WatchNotificationView: View {
             .padding(.horizontal, ICareSpacing.md)
             .padding(.vertical, ICareSpacing.sm)
             .background(ICareColors.surface)
+            .navigationDestination(isPresented: $showCountdown) {
+                WatchCountdownView()
+                    .environmentObject(appState)
+            }
         }
     }
 }

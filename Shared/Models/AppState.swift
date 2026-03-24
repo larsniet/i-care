@@ -126,6 +126,13 @@ final class AppState: ObservableObject {
                     self.breakStartedAt = Date()
                 }
                 self.pendingAction = .startBreak
+            case "endBreak":
+                let wasActive = self.breakStartedAt != nil
+                self.breakStartedAt = nil
+                if wasActive {
+                    let type: BreakCompletionType = (payload["type"] as? String) == "completed" ? .completed : .skipped
+                    self.completeBreak(type: type, device: .watch)
+                }
             default: break
             }
         }
@@ -240,6 +247,16 @@ final class AppState: ObservableObject {
         syncManager.sendCommand("startBreak", payload: [
             "breakStartedAt": now.timeIntervalSince1970
         ])
+    }
+
+    func endBreak(type: BreakCompletionType, device: DeviceType = .iphone) {
+        guard breakStartedAt != nil else { return }
+        breakStartedAt = nil
+        completeBreak(type: type, device: device)
+        syncManager.sendCommand("endBreak", payload: [
+            "type": type.rawValue
+        ])
+        sendSyncContext()
     }
 
     func resetTimer() {
@@ -358,13 +375,17 @@ final class AppState: ObservableObject {
 
         syncManager.onCommandReceived = { [weak self] command, payload in
             guard let self else { return }
-            if command == "startBreak" {
+            switch command {
+            case "startBreak":
                 if let ts = payload["breakStartedAt"] as? TimeInterval {
                     self.breakStartedAt = Date(timeIntervalSince1970: ts)
                 } else if self.breakStartedAt == nil {
                     self.breakStartedAt = Date()
                 }
                 self.pendingAction = .startBreak
+            case "endBreak":
+                self.breakStartedAt = nil
+            default: break
             }
         }
     }
