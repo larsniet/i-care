@@ -1,0 +1,7 @@
+git_url(ENV["MATCH_REPO"])
+
+storage_mode "git"
+type "appstore"
+
+app_identifier ["com.icareeye.app", "com.icareeye.app.watchkitapp"]
+team_id "3BGHPQ6C3H"

@@ -323,9 +323,9 @@ final class AppState: ObservableObject {
     #endif
 
     private func onSettingsChanged() {
-        SettingsStore.save(settings)
         Task { [weak self] in
             guard let self else { return }
+            SettingsStore.save(self.settings)
             self.scheduleReminders(force: true)
             self.sendSyncContext()
         }
