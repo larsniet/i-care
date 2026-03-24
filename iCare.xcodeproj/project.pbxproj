@@ -1,0 +1,703 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		02788F82425BB08B263C9A2A /* ICareTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A06B8F84DE4C357CA9459E9 /* ICareTypography.swift */; };
+		02E175EF8253498B976A00EC /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC09812B917956EC37A0B037 /* SettingsStore.swift */; };
+		0392EFA232D4AEFA7C3DC39F /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDC0ED373BEBFAC5B4823DB /* StatusBadge.swift */; };
+		03EABD71D0335BB56D8361E5 /* NotificationStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ADBC013510DD387EEA1B02F /* NotificationStep.swift */; };
+		097B21ABF8CE9A8AFF21F16D /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FB6C31DFF0DF82B2DFFD32A /* HomeView.swift */; };
+		113069D4C71ABB49947EA0A2 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4ABFCF98D21AF4F6A452614 /* AppState.swift */; };
+		1B6243E8FAD022C034373401 /* ICareColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6E8BA8665DA578F54EC0C2A /* ICareColors.swift */; };
+		1C5429BC30DA9C2F3123EBF2 /* CompletionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E390A8DA5711BE59BBDAF828 /* CompletionTracker.swift */; };
+		20CD6236E23F9997C8536B40 /* DailySummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6DEA62E084AF2125845E9E4 /* DailySummary.swift */; };
+		289E462AE1482F4FDAD061F3 /* iCareApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54937F6A82449F73BD16E27 /* iCareApp.swift */; };
+		330D2FE21E3C929C2076DBC6 /* NotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63A33D65E8394C14E383CC2C /* NotificationCoordinator.swift */; };
+		35FAB7D647F1F7FD87EA84EB /* SecondaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7952430C774F916C8C36506 /* SecondaryButton.swift */; };
+		377552FA243DD047372021B5 /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DFE0B732DD398C3158428AD /* PrimaryButton.swift */; };
+		3C284B77491B25299FA24FE4 /* iCareWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 861ED7BC5F7EB566B4922A80 /* iCareWatchApp.swift */; };
+		43184E1426CCB37FD53FB3D7 /* DailySummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6DEA62E084AF2125845E9E4 /* DailySummary.swift */; };
+		4A8083D1ACE8413955ACAE61 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4ABFCF98D21AF4F6A452614 /* AppState.swift */; };
+		4C2E0CC931A22DC9021DF955 /* ReminderSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D07CF6C265CF285039ADE0B /* ReminderSettings.swift */; };
+		547D663AA1AE28D3CB0248E0 /* SecondaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7952430C774F916C8C36506 /* SecondaryButton.swift */; };
+		5AEB7D253377EE49285C5287 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDC0ED373BEBFAC5B4823DB /* StatusBadge.swift */; };
+		60401543C1D840D4132FD6F6 /* ICareAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628CC728193114C990C507AF /* ICareAnimation.swift */; };
+		67500376DBA01CF6CAE4E38D /* HomeBlockedContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFEFA464D3FC1BB70F67FD1 /* HomeBlockedContent.swift */; };
+		6DC29312B491106E73C4D3DC /* ProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DFD686EE6652D174FEA2C26 /* ProgressRing.swift */; };
+		8226DE7CB5AA10E79F6912E5 /* BreakRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D943DE01A99B8F3B91ADA1 /* BreakRecord.swift */; };
+		83A88233E1FFB4BCBC005D76 /* ReminderEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 667D9374A607D1642D0FEC14 /* ReminderEngine.swift */; };
+		844674E6F227162F8ACAB6AD /* NotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63A33D65E8394C14E383CC2C /* NotificationCoordinator.swift */; };
+		89FCF0550BFC830F945AD9E9 /* CountdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35EB07F7E2505EB639F99D9B /* CountdownView.swift */; };
+		8E703B455B3B6E4FBD6C677E /* ICareColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6E8BA8665DA578F54EC0C2A /* ICareColors.swift */; };
+		9BD378C651977D7BD5D242AA /* ReminderEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 667D9374A607D1642D0FEC14 /* ReminderEngine.swift */; };
+		9F1C4681345CF79D6CC35BE2 /* CompletionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E390A8DA5711BE59BBDAF828 /* CompletionTracker.swift */; };
+		A05B5CE21B9D04E163F10FD3 /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DFE0B732DD398C3158428AD /* PrimaryButton.swift */; };
+		A645D4030809D3AC45434646 /* HomeActiveContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E5DB240D21C337D7FB78E8 /* HomeActiveContent.swift */; };
+		AC0C237928585059A36DF112 /* WatchNotificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83BA87B5E422DD5EE15DE306 /* WatchNotificationView.swift */; };
+		AC15CEA72AE608C205023B7A /* iCareWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = D059A8DECF7F44B726BD8053 /* iCareWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BC94BE8ED90E217B4DAF5E4E /* WelcomeStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB3AB4D9B0DCA29B4392D73 /* WelcomeStep.swift */; };
+		C0D40E81FA7C499DD64270C8 /* HomePausedContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCCE58EA64EBDCC7300F3E8C /* HomePausedContent.swift */; };
+		CD71E02B9288BC6B8765C38A /* ICareAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628CC728193114C990C507AF /* ICareAnimation.swift */; };
+		D1F5E50002282D85B13694A5 /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A616E980CC699A986BF3C7E /* OnboardingComponents.swift */; };
+		D9E592A490EB19D961D2AF11 /* ScheduleSetupStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C5BFEA7A6A3C3D7C4A19B53 /* ScheduleSetupStep.swift */; };
+		DA695F794CA8BD0284113A7C /* ReminderSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D07CF6C265CF285039ADE0B /* ReminderSettings.swift */; };
+		DC6C673EB3D09C64CA29548D /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC09812B917956EC37A0B037 /* SettingsStore.swift */; };
+		DE710C738505B975A2935275 /* ProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DFD686EE6652D174FEA2C26 /* ProgressRing.swift */; };
+		DF58B5D93E34596B080E38F7 /* ICareSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD171CF0B9F7BCAFF6ECCFCD /* ICareSpacing.swift */; };
+		E0DF5A74F6B73ECFB5611E1A /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4853456B0BAC8823BAD9A0C8 /* OnboardingFlow.swift */; };
+		E825F898E28F8F0413C99B19 /* BreakRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78D943DE01A99B8F3B91ADA1 /* BreakRecord.swift */; };
+		E940F469A6D007C82BB055C7 /* ReminderRuntimeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76011611D99AD47F9A474500 /* ReminderRuntimeState.swift */; };
+		EB531488C79832F6EC689B10 /* WatchCountdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220C365005D1CFD9C340B276 /* WatchCountdownView.swift */; };
+		EE50F2A919517F9BDFE70307 /* ICareTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A06B8F84DE4C357CA9459E9 /* ICareTypography.swift */; };
+		F7817032C48D003461FA4668 /* ReminderRuntimeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76011611D99AD47F9A474500 /* ReminderRuntimeState.swift */; };
+		F784B5681DDD03CAB28EDE15 /* WatchHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0145D65645BB651C67B6A06 /* WatchHomeView.swift */; };
+		FC787C06B41561077CEF8EFC /* ICareSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD171CF0B9F7BCAFF6ECCFCD /* ICareSpacing.swift */; };
+		FD8DACF98F3DA06C35E67C47 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B512D1DA3065853F090632E4 /* RootView.swift */; };
+		FE104C0EE25F1DC93DA55DB5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF6D1362B847D606EEC8584 /* SettingsView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		77E318F37421DED3115539BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 60CA1A0164DBF779B2DA3D0F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BF4E08618DA20822D583DAAA;
+			remoteInfo = iCareWatch;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		6419936010D19B6D1852D673 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				AC15CEA72AE608C205023B7A /* iCareWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0FB6C31DFF0DF82B2DFFD32A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		1A06B8F84DE4C357CA9459E9 /* ICareTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICareTypography.swift; sourceTree = "<group>"; };
+		220C365005D1CFD9C340B276 /* WatchCountdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCountdownView.swift; sourceTree = "<group>"; };
+		2DFD686EE6652D174FEA2C26 /* ProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressRing.swift; sourceTree = "<group>"; };
+		35EB07F7E2505EB639F99D9B /* CountdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownView.swift; sourceTree = "<group>"; };
+		4853456B0BAC8823BAD9A0C8 /* OnboardingFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlow.swift; sourceTree = "<group>"; };
+		4D680B8B17BC62A483276C83 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		4DFE0B732DD398C3158428AD /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };
+		5C5BFEA7A6A3C3D7C4A19B53 /* ScheduleSetupStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleSetupStep.swift; sourceTree = "<group>"; };
+		628CC728193114C990C507AF /* ICareAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICareAnimation.swift; sourceTree = "<group>"; };
+		63A33D65E8394C14E383CC2C /* NotificationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCoordinator.swift; sourceTree = "<group>"; };
+		667D9374A607D1642D0FEC14 /* ReminderEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderEngine.swift; sourceTree = "<group>"; };
+		6A616E980CC699A986BF3C7E /* OnboardingComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingComponents.swift; sourceTree = "<group>"; };
+		76011611D99AD47F9A474500 /* ReminderRuntimeState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderRuntimeState.swift; sourceTree = "<group>"; };
+		78D943DE01A99B8F3B91ADA1 /* BreakRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakRecord.swift; sourceTree = "<group>"; };
+		7ADBC013510DD387EEA1B02F /* NotificationStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationStep.swift; sourceTree = "<group>"; };
+		83BA87B5E422DD5EE15DE306 /* WatchNotificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchNotificationView.swift; sourceTree = "<group>"; };
+		861ED7BC5F7EB566B4922A80 /* iCareWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iCareWatchApp.swift; sourceTree = "<group>"; };
+		8DF6D1362B847D606EEC8584 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		9D07CF6C265CF285039ADE0B /* ReminderSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderSettings.swift; sourceTree = "<group>"; };
+		A54937F6A82449F73BD16E27 /* iCareApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iCareApp.swift; sourceTree = "<group>"; };
+		ADB4DACB141E85C03D6B012C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		B512D1DA3065853F090632E4 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		BC09812B917956EC37A0B037 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		BCCE58EA64EBDCC7300F3E8C /* HomePausedContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePausedContent.swift; sourceTree = "<group>"; };
+		BD171CF0B9F7BCAFF6ECCFCD /* ICareSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICareSpacing.swift; sourceTree = "<group>"; };
+		C6E8BA8665DA578F54EC0C2A /* ICareColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICareColors.swift; sourceTree = "<group>"; };
+		C7952430C774F916C8C36506 /* SecondaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecondaryButton.swift; sourceTree = "<group>"; };
+		CEFEFA464D3FC1BB70F67FD1 /* HomeBlockedContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeBlockedContent.swift; sourceTree = "<group>"; };
+		D0145D65645BB651C67B6A06 /* WatchHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHomeView.swift; sourceTree = "<group>"; };
+		D059A8DECF7F44B726BD8053 /* iCareWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iCareWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DCB3AB4D9B0DCA29B4392D73 /* WelcomeStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeStep.swift; sourceTree = "<group>"; };
+		DDDC0ED373BEBFAC5B4823DB /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
+		E390A8DA5711BE59BBDAF828 /* CompletionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionTracker.swift; sourceTree = "<group>"; };
+		E6DEA62E084AF2125845E9E4 /* DailySummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySummary.swift; sourceTree = "<group>"; };
+		E6E5DB240D21C337D7FB78E8 /* HomeActiveContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeActiveContent.swift; sourceTree = "<group>"; };
+		E7664DF05CB1748734ED54C6 /* iCare.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iCare.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F4ABFCF98D21AF4F6A452614 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		066FCCCEDFB9F9B4B19D9947 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				8DF6D1362B847D606EEC8584 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		16A01B009796ED147E710C78 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				861ED7BC5F7EB566B4922A80 /* iCareWatchApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		1DE2DDA84C4A14A1E4205845 /* iCare */ = {
+			isa = PBXGroup;
+			children = (
+				ADB4DACB141E85C03D6B012C /* Info.plist */,
+				AFEF476318E3787F7E8C7F20 /* App */,
+				5AC65E337802E41D44AF1400 /* Features */,
+			);
+			path = iCare;
+			sourceTree = "<group>";
+		};
+		292F93B32268C3E87113F863 /* Notification */ = {
+			isa = PBXGroup;
+			children = (
+				83BA87B5E422DD5EE15DE306 /* WatchNotificationView.swift */,
+			);
+			path = Notification;
+			sourceTree = "<group>";
+		};
+		2CEA85165E5984A05372F8FD /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				E6E5DB240D21C337D7FB78E8 /* HomeActiveContent.swift */,
+				CEFEFA464D3FC1BB70F67FD1 /* HomeBlockedContent.swift */,
+				BCCE58EA64EBDCC7300F3E8C /* HomePausedContent.swift */,
+				0FB6C31DFF0DF82B2DFFD32A /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		3B3E9BC56C8CAECB3491CB36 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				7ADBC013510DD387EEA1B02F /* NotificationStep.swift */,
+				6A616E980CC699A986BF3C7E /* OnboardingComponents.swift */,
+				4853456B0BAC8823BAD9A0C8 /* OnboardingFlow.swift */,
+				5C5BFEA7A6A3C3D7C4A19B53 /* ScheduleSetupStep.swift */,
+				DCB3AB4D9B0DCA29B4392D73 /* WelcomeStep.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		506C36D74F1B37AC45F360FB /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				4DFE0B732DD398C3158428AD /* PrimaryButton.swift */,
+				2DFD686EE6652D174FEA2C26 /* ProgressRing.swift */,
+				C7952430C774F916C8C36506 /* SecondaryButton.swift */,
+				DDDC0ED373BEBFAC5B4823DB /* StatusBadge.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		5AC65E337802E41D44AF1400 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				E774E10099ECB2DE372D4948 /* Countdown */,
+				2CEA85165E5984A05372F8FD /* Home */,
+				3B3E9BC56C8CAECB3491CB36 /* Onboarding */,
+				066FCCCEDFB9F9B4B19D9947 /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		6022E3D0BAC41BD8E80E1461 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E7664DF05CB1748734ED54C6 /* iCare.app */,
+				D059A8DECF7F44B726BD8053 /* iCareWatch.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		65103A2BEC7C521BB3E1D8F7 /* Countdown */ = {
+			isa = PBXGroup;
+			children = (
+				220C365005D1CFD9C340B276 /* WatchCountdownView.swift */,
+			);
+			path = Countdown;
+			sourceTree = "<group>";
+		};
+		66AC2FC554CD44E056E5E06A /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				65103A2BEC7C521BB3E1D8F7 /* Countdown */,
+				76E06E42E33BE8A2B9DCE9D9 /* Home */,
+				292F93B32268C3E87113F863 /* Notification */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		76E06E42E33BE8A2B9DCE9D9 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				D0145D65645BB651C67B6A06 /* WatchHomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		8B9927E01DDC3427AC004E66 = {
+			isa = PBXGroup;
+			children = (
+				1DE2DDA84C4A14A1E4205845 /* iCare */,
+				AAF6FADF5E55DCCCC8F9245B /* iCareWatch */,
+				EF59379F0B76B318E9CD5B75 /* Shared */,
+				6022E3D0BAC41BD8E80E1461 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A000493F35D6D5E3A7A5E1FA /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				628CC728193114C990C507AF /* ICareAnimation.swift */,
+				C6E8BA8665DA578F54EC0C2A /* ICareColors.swift */,
+				BD171CF0B9F7BCAFF6ECCFCD /* ICareSpacing.swift */,
+				1A06B8F84DE4C357CA9459E9 /* ICareTypography.swift */,
+				506C36D74F1B37AC45F360FB /* Components */,
+			);
+			path = DesignSystem;
+			sourceTree = "<group>";
+		};
+		A63B85451018E24050BA58F6 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				F4ABFCF98D21AF4F6A452614 /* AppState.swift */,
+				78D943DE01A99B8F3B91ADA1 /* BreakRecord.swift */,
+				E6DEA62E084AF2125845E9E4 /* DailySummary.swift */,
+				76011611D99AD47F9A474500 /* ReminderRuntimeState.swift */,
+				9D07CF6C265CF285039ADE0B /* ReminderSettings.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AAF6FADF5E55DCCCC8F9245B /* iCareWatch */ = {
+			isa = PBXGroup;
+			children = (
+				4D680B8B17BC62A483276C83 /* Info.plist */,
+				16A01B009796ED147E710C78 /* App */,
+				66AC2FC554CD44E056E5E06A /* Features */,
+			);
+			path = iCareWatch;
+			sourceTree = "<group>";
+		};
+		AFEF476318E3787F7E8C7F20 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A54937F6A82449F73BD16E27 /* iCareApp.swift */,
+				B512D1DA3065853F090632E4 /* RootView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C782551BF85B23773966E2AD /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				E390A8DA5711BE59BBDAF828 /* CompletionTracker.swift */,
+				63A33D65E8394C14E383CC2C /* NotificationCoordinator.swift */,
+				667D9374A607D1642D0FEC14 /* ReminderEngine.swift */,
+				BC09812B917956EC37A0B037 /* SettingsStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		E774E10099ECB2DE372D4948 /* Countdown */ = {
+			isa = PBXGroup;
+			children = (
+				35EB07F7E2505EB639F99D9B /* CountdownView.swift */,
+			);
+			path = Countdown;
+			sourceTree = "<group>";
+		};
+		EF59379F0B76B318E9CD5B75 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				A000493F35D6D5E3A7A5E1FA /* DesignSystem */,
+				A63B85451018E24050BA58F6 /* Models */,
+				C782551BF85B23773966E2AD /* Services */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BF4E08618DA20822D583DAAA /* iCareWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8446EEAB6DDF2AB8A94AC016 /* Build configuration list for PBXNativeTarget "iCareWatch" */;
+			buildPhases = (
+				0C5C5D7EA6D2994B43C05A2C /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = iCareWatch;
+			packageProductDependencies = (
+			);
+			productName = iCareWatch;
+			productReference = D059A8DECF7F44B726BD8053 /* iCareWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EA38EE2E38F6E4557D32FFF6 /* iCare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 84F60D26240D17E053275C2E /* Build configuration list for PBXNativeTarget "iCare" */;
+			buildPhases = (
+				3A90B950AB333114204E68BC /* Sources */,
+				6419936010D19B6D1852D673 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				48863E2309A96226A0C09740 /* PBXTargetDependency */,
+			);
+			name = iCare;
+			packageProductDependencies = (
+			);
+			productName = iCare;
+			productReference = E7664DF05CB1748734ED54C6 /* iCare.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		60CA1A0164DBF779B2DA3D0F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = 1182F81EC5124DFBEAA36A47 /* Build configuration list for PBXProject "iCare" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 8B9927E01DDC3427AC004E66;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 6022E3D0BAC41BD8E80E1461 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EA38EE2E38F6E4557D32FFF6 /* iCare */,
+				BF4E08618DA20822D583DAAA /* iCareWatch */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0C5C5D7EA6D2994B43C05A2C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A8083D1ACE8413955ACAE61 /* AppState.swift in Sources */,
+				8226DE7CB5AA10E79F6912E5 /* BreakRecord.swift in Sources */,
+				9F1C4681345CF79D6CC35BE2 /* CompletionTracker.swift in Sources */,
+				43184E1426CCB37FD53FB3D7 /* DailySummary.swift in Sources */,
+				60401543C1D840D4132FD6F6 /* ICareAnimation.swift in Sources */,
+				1B6243E8FAD022C034373401 /* ICareColors.swift in Sources */,
+				DF58B5D93E34596B080E38F7 /* ICareSpacing.swift in Sources */,
+				EE50F2A919517F9BDFE70307 /* ICareTypography.swift in Sources */,
+				330D2FE21E3C929C2076DBC6 /* NotificationCoordinator.swift in Sources */,
+				A05B5CE21B9D04E163F10FD3 /* PrimaryButton.swift in Sources */,
+				6DC29312B491106E73C4D3DC /* ProgressRing.swift in Sources */,
+				83A88233E1FFB4BCBC005D76 /* ReminderEngine.swift in Sources */,
+				F7817032C48D003461FA4668 /* ReminderRuntimeState.swift in Sources */,
+				DA695F794CA8BD0284113A7C /* ReminderSettings.swift in Sources */,
+				35FAB7D647F1F7FD87EA84EB /* SecondaryButton.swift in Sources */,
+				DC6C673EB3D09C64CA29548D /* SettingsStore.swift in Sources */,
+				0392EFA232D4AEFA7C3DC39F /* StatusBadge.swift in Sources */,
+				EB531488C79832F6EC689B10 /* WatchCountdownView.swift in Sources */,
+				F784B5681DDD03CAB28EDE15 /* WatchHomeView.swift in Sources */,
+				AC0C237928585059A36DF112 /* WatchNotificationView.swift in Sources */,
+				3C284B77491B25299FA24FE4 /* iCareWatchApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3A90B950AB333114204E68BC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				113069D4C71ABB49947EA0A2 /* AppState.swift in Sources */,
+				E825F898E28F8F0413C99B19 /* BreakRecord.swift in Sources */,
+				1C5429BC30DA9C2F3123EBF2 /* CompletionTracker.swift in Sources */,
+				89FCF0550BFC830F945AD9E9 /* CountdownView.swift in Sources */,
+				20CD6236E23F9997C8536B40 /* DailySummary.swift in Sources */,
+				A645D4030809D3AC45434646 /* HomeActiveContent.swift in Sources */,
+				67500376DBA01CF6CAE4E38D /* HomeBlockedContent.swift in Sources */,
+				C0D40E81FA7C499DD64270C8 /* HomePausedContent.swift in Sources */,
+				097B21ABF8CE9A8AFF21F16D /* HomeView.swift in Sources */,
+				CD71E02B9288BC6B8765C38A /* ICareAnimation.swift in Sources */,
+				8E703B455B3B6E4FBD6C677E /* ICareColors.swift in Sources */,
+				FC787C06B41561077CEF8EFC /* ICareSpacing.swift in Sources */,
+				02788F82425BB08B263C9A2A /* ICareTypography.swift in Sources */,
+				844674E6F227162F8ACAB6AD /* NotificationCoordinator.swift in Sources */,
+				03EABD71D0335BB56D8361E5 /* NotificationStep.swift in Sources */,
+				D1F5E50002282D85B13694A5 /* OnboardingComponents.swift in Sources */,
+				E0DF5A74F6B73ECFB5611E1A /* OnboardingFlow.swift in Sources */,
+				377552FA243DD047372021B5 /* PrimaryButton.swift in Sources */,
+				DE710C738505B975A2935275 /* ProgressRing.swift in Sources */,
+				9BD378C651977D7BD5D242AA /* ReminderEngine.swift in Sources */,
+				E940F469A6D007C82BB055C7 /* ReminderRuntimeState.swift in Sources */,
+				4C2E0CC931A22DC9021DF955 /* ReminderSettings.swift in Sources */,
+				FD8DACF98F3DA06C35E67C47 /* RootView.swift in Sources */,
+				D9E592A490EB19D961D2AF11 /* ScheduleSetupStep.swift in Sources */,
+				547D663AA1AE28D3CB0248E0 /* SecondaryButton.swift in Sources */,
+				02E175EF8253498B976A00EC /* SettingsStore.swift in Sources */,
+				FE104C0EE25F1DC93DA55DB5 /* SettingsView.swift in Sources */,
+				5AEB7D253377EE49285C5287 /* StatusBadge.swift in Sources */,
+				BC94BE8ED90E217B4DAF5E4E /* WelcomeStep.swift in Sources */,
+				289E462AE1482F4FDAD061F3 /* iCareApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		48863E2309A96226A0C09740 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BF4E08618DA20822D583DAAA /* iCareWatch */;
+			targetProxy = 77E318F37421DED3115539BA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0464BC2EE14F51BDF62C4A8F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = iCareWatch/iCareWatch.entitlements;
+				DEVELOPMENT_TEAM = 3BGHPQ6C3H;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = iCareWatch/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.icareeye.app.watchkitapp;
+				PRODUCT_NAME = iCareWatch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
+		};
+		0666116CCEB75C56FEE77509 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = iCareWatch/iCareWatch.entitlements;
+				DEVELOPMENT_TEAM = 3BGHPQ6C3H;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = iCareWatch/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.icareeye.app.watchkitapp;
+				PRODUCT_NAME = iCareWatch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		94E140C8E107866138BDBE85 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = iCare/iCare.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 3BGHPQ6C3H;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = iCare/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.icareeye.app;
+				PRODUCT_NAME = iCare;
+				SDKROOT = iphoneos;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A2E93AAD33C4AD82B0198521 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = iCare/iCare.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 3BGHPQ6C3H;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = iCare/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.icareeye.app;
+				PRODUCT_NAME = iCare;
+				SDKROOT = iphoneos;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		CF1CDA0FC45E983487A81FE5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.9;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		F0D34A5361955709299CFB06 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.9;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1182F81EC5124DFBEAA36A47 /* Build configuration list for PBXProject "iCare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CF1CDA0FC45E983487A81FE5 /* Debug */,
+				F0D34A5361955709299CFB06 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8446EEAB6DDF2AB8A94AC016 /* Build configuration list for PBXNativeTarget "iCareWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0666116CCEB75C56FEE77509 /* Debug */,
+				0464BC2EE14F51BDF62C4A8F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		84F60D26240D17E053275C2E /* Build configuration list for PBXNativeTarget "iCare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				94E140C8E107866138BDBE85 /* Debug */,
+				A2E93AAD33C4AD82B0198521 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 60CA1A0164DBF779B2DA3D0F /* Project object */;
+}
