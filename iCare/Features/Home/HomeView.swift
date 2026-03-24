@@ -54,7 +54,7 @@ struct HomeView: View {
             VStack(spacing: 0) {
                 homeHeader
                     .padding(.horizontal, ICareSpacing.lg)
-                    .padding(.top, ICareSpacing.sm)
+                    .padding(.top, ICareSpacing.base)
 
                 Group {
                     switch appState.currentStatus {
@@ -77,11 +77,11 @@ struct HomeView: View {
 
     private var homeHeader: some View {
         HStack {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Image("AppLogo")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 24, height: 24)
+                    .frame(width: 32, height: 32)
                 Text("icare")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(ICareColors.brand)

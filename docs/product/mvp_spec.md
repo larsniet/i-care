@@ -88,6 +88,32 @@ Do not include in v1:
 - hydration, posture, meditation, or pomodoro features
 - AI features
 
+## Post-MVP Roadmap
+
+Good additions to consider after v1:
+
+- Apple Watch complication showing next break
+- iPhone widget showing next reminder
+- Quick actions in notification: Start now / Snooze 5 min / Skip
+- Temporary pause modes: pause 1 hour, pause until tomorrow
+- Simple daily and weekly completion stats
+- Accessibility options for larger countdown text and stronger visual cues
+
+Be cautious with:
+
+- streaks and achievements
+- visual trends or charts
+- multiple reminder modes
+- break categories
+- "smart reminders"
+- AI recommendations
+
+These can make the app worse if they distract from the core use case.
+
+## Scope-Creep Resistance
+
+There will always be requests for hydration reminders, posture tracking, Pomodoro timers, meditation, focus timers, macOS support, and Android support. Most of that should be ignored initially. The product identity must stay narrow: one rule, one job, one clean loop.
+
 ## Release Boundary
 
 The MVP is ready when:

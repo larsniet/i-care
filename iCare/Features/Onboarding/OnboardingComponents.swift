@@ -6,13 +6,13 @@ struct OnboardingHeader: View {
 
     var body: some View {
         HStack {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Image("AppLogo")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 22, height: 22)
+                    .frame(width: 32, height: 32)
                 Text("icare")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(ICareColors.brand)
             }
 

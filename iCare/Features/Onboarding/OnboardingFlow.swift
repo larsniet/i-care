@@ -20,13 +20,13 @@ struct OnboardingFlow: View {
             VStack(spacing: 0) {
                 // MARK: - Header
                 HStack {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         Image("AppLogo")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 22, height: 22)
+                            .frame(width: 32, height: 32)
                         Text("icare")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(ICareColors.brand)
                     }
 
@@ -79,6 +79,7 @@ struct OnboardingFlow: View {
             switch currentStep {
             case 0:
                 primaryButton("Get Started", icon: "arrow.right") { goTo(1) }
+                backButton { }.hidden()
 
             case 1:
                 primaryButton("Continue", icon: "arrow.right") { goTo(2) }
