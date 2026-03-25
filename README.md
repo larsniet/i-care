@@ -27,7 +27,6 @@ The app is fully usable on iPhone alone and meaningfully better with Apple Watch
   <img src="screenshots/page2.jpg" width="200" alt="Break countdown with Apple Watch sync">
   <img src="screenshots/page3.jpg" width="200" alt="Schedule setup">
   <img src="screenshots/page4.jpg" width="200" alt="Onboarding with 20-20-20 rule">
-  <img src="screenshots/page5.jpg" width="200" alt="Focus mode integration">
 </p>
 
 ## Features
