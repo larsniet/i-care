@@ -50,6 +50,8 @@ enum ReminderEngine {
             let startMinute = settings.activeStartHour * 60 + settings.activeStartMinute
             let endMinute = settings.activeEndHour * 60 + settings.activeEndMinute
 
+            guard endMinute > startMinute else { return results }
+
             if minuteOfDay >= startMinute && minuteOfDay < endMinute {
                 results.append(candidate)
                 candidate = candidate.addingTimeInterval(interval)

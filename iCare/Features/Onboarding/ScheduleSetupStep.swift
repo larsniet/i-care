@@ -182,13 +182,26 @@ struct ScheduleSetupStep: View {
         )
     }
 
+    private let minimumActiveWindowMinutes = 60
+
     private var startTimeBinding: Binding<Date> {
         Binding(
             get: { Self.timeDate(hour: appState.settings.activeStartHour, minute: appState.settings.activeStartMinute) },
             set: { date in
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                appState.settings.activeStartHour = parts.hour ?? 0
-                appState.settings.activeStartMinute = parts.minute ?? 0
+                var s = appState.settings
+                s.activeStartHour = parts.hour ?? 0
+                s.activeStartMinute = parts.minute ?? 0
+
+                let startMinutes = s.activeStartHour * 60 + s.activeStartMinute
+                let endMinutes = s.activeEndHour * 60 + s.activeEndMinute
+                if endMinutes - startMinutes < minimumActiveWindowMinutes {
+                    let clamped = min(startMinutes + minimumActiveWindowMinutes, 24 * 60 - 1)
+                    s.activeEndHour = clamped / 60
+                    s.activeEndMinute = clamped % 60
+                }
+
+                appState.settings = s
             }
         )
     }
@@ -198,8 +211,19 @@ struct ScheduleSetupStep: View {
             get: { Self.timeDate(hour: appState.settings.activeEndHour, minute: appState.settings.activeEndMinute) },
             set: { date in
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                appState.settings.activeEndHour = parts.hour ?? 0
-                appState.settings.activeEndMinute = parts.minute ?? 0
+                var s = appState.settings
+                s.activeEndHour = parts.hour ?? 0
+                s.activeEndMinute = parts.minute ?? 0
+
+                let startMinutes = s.activeStartHour * 60 + s.activeStartMinute
+                let endMinutes = s.activeEndHour * 60 + s.activeEndMinute
+                if endMinutes - startMinutes < minimumActiveWindowMinutes {
+                    let clamped = max(endMinutes - minimumActiveWindowMinutes, 0)
+                    s.activeStartHour = clamped / 60
+                    s.activeStartMinute = clamped % 60
+                }
+
+                appState.settings = s
             }
         )
     }

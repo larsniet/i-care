@@ -280,6 +280,8 @@ struct SettingsView: View {
         )
     }
 
+    private let minimumActiveWindowMinutes = 60
+
     private var activeStartTimeBinding: Binding<Date> {
         Binding(
             get: {
@@ -293,6 +295,15 @@ struct SettingsView: View {
                 var s = appState.settings
                 s.activeStartHour = parts.hour ?? 0
                 s.activeStartMinute = parts.minute ?? 0
+
+                let startMinutes = s.activeStartHour * 60 + s.activeStartMinute
+                let endMinutes = s.activeEndHour * 60 + s.activeEndMinute
+                if endMinutes - startMinutes < minimumActiveWindowMinutes {
+                    let clamped = min(startMinutes + minimumActiveWindowMinutes, 24 * 60 - 1)
+                    s.activeEndHour = clamped / 60
+                    s.activeEndMinute = clamped % 60
+                }
+
                 appState.settings = s
             }
         )
@@ -311,6 +322,15 @@ struct SettingsView: View {
                 var s = appState.settings
                 s.activeEndHour = parts.hour ?? 0
                 s.activeEndMinute = parts.minute ?? 0
+
+                let startMinutes = s.activeStartHour * 60 + s.activeStartMinute
+                let endMinutes = s.activeEndHour * 60 + s.activeEndMinute
+                if endMinutes - startMinutes < minimumActiveWindowMinutes {
+                    let clamped = max(endMinutes - minimumActiveWindowMinutes, 0)
+                    s.activeStartHour = clamped / 60
+                    s.activeStartMinute = clamped % 60
+                }
+
                 appState.settings = s
             }
         )
