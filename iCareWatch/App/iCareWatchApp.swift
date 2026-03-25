@@ -15,7 +15,15 @@ struct iCareWatchApp: App {
                         for: WKApplication.willEnterForegroundNotification
                     )
                 ) { _ in
+                    appState.notificationCoordinator.isAppInForeground = true
                     WatchSyncManager.shared.requestContextFromPhone()
+                }
+                .onReceive(
+                    NotificationCenter.default.publisher(
+                        for: WKApplication.didEnterBackgroundNotification
+                    )
+                ) { _ in
+                    appState.notificationCoordinator.isAppInForeground = false
                 }
                 .onReceive(
                     NotificationCenter.default.publisher(for: .iCareStartBreak)

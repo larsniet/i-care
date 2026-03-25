@@ -13,9 +13,17 @@ struct iCareApp: App {
                         for: willEnterForegroundNotification
                     )
                 ) { _ in
+                    appState.notificationCoordinator.isAppInForeground = true
                     appState.refreshFocusFilterState()
                     Task { await appState.refreshNotificationStatus() }
                     appState.scheduleReminders()
+                }
+                .onReceive(
+                    NotificationCenter.default.publisher(
+                        for: didEnterBackgroundNotification
+                    )
+                ) { _ in
+                    appState.notificationCoordinator.isAppInForeground = false
                 }
         }
     }
@@ -24,9 +32,15 @@ struct iCareApp: App {
     private var willEnterForegroundNotification: Notification.Name {
         UIApplication.willEnterForegroundNotification
     }
+    private var didEnterBackgroundNotification: Notification.Name {
+        UIApplication.didEnterBackgroundNotification
+    }
     #else
     private var willEnterForegroundNotification: Notification.Name {
         Notification.Name("WKApplicationWillEnterForegroundNotification")
+    }
+    private var didEnterBackgroundNotification: Notification.Name {
+        Notification.Name("WKApplicationDidEnterBackgroundNotification")
     }
     #endif
 }

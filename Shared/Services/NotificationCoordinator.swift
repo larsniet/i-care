@@ -119,6 +119,7 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     // MARK: - UNUserNotificationCenterDelegate
 
     var isShowingCountdown = false
+    var isAppInForeground = false
 
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
@@ -127,6 +128,10 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     ) {
         let id = notification.request.identifier
         if id == Self.breakCompleteID && isShowingCountdown {
+            handler([])
+            return
+        }
+        if id.hasPrefix(Self.reminderIDPrefix) && isAppInForeground {
             handler([])
             return
         }

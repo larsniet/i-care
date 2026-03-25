@@ -103,7 +103,6 @@ struct WatchHomeView: View {
             if hasBottomButtons {
                 bottomButtons
                     .padding(.horizontal, ICareSpacing.base)
-                    .padding(.bottom, ICareSpacing.sm)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -182,7 +181,7 @@ struct WatchHomeView: View {
                 )
                 .animation(.linear(duration: 1), value: progress)
 
-                Text("\(remaining)")
+                Text(countdownString(seconds: remaining))
                     .font(.system(size: 34, weight: .light, design: .monospaced))
                     .foregroundStyle(ICareColors.textPrimary)
                     .contentTransition(.numericText())
