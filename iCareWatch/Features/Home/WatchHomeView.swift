@@ -113,56 +113,44 @@ struct WatchHomeView: View {
     }
 
     private var bottomButtons: some View {
-        VStack(spacing: ICareSpacing.xs) {
+        HStack(spacing: ICareSpacing.sm) {
+            Button {
+                WatchSyncManager.shared.sendCommand("reset")
+            } label: {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(ICareColors.textSecondary)
+                    .frame(width: 32, height: 32)
+                    .background(ICareColors.separator.opacity(0.6))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+
             Button {
                 appState.startBreak()
                 showCountdown = true
             } label: {
-                Text("Start break")
-                    .font(.system(size: 15, weight: .semibold))
+                Text("Start")
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, ICareSpacing.sm)
+                    .padding(.horizontal, ICareSpacing.base)
+                    .padding(.vertical, 6)
                     .background(ICareColors.brand)
-                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
+                    .clipShape(Capsule())
             }
             .buttonStyle(.plain)
 
-            HStack(spacing: ICareSpacing.xs) {
-                Button {
-                    WatchSyncManager.shared.sendCommand("reset")
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.counterclockwise")
-                            .font(.system(size: 10, weight: .medium))
-                        Text("Reset")
-                    }
-                    .font(.system(size: 13, weight: .medium))
+            Button {
+                WatchSyncManager.shared.sendCommand("pause")
+            } label: {
+                Image(systemName: "pause.fill")
+                    .font(.system(size: 11))
                     .foregroundStyle(ICareColors.textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, ICareSpacing.xs)
+                    .frame(width: 32, height: 32)
                     .background(ICareColors.separator.opacity(0.6))
-                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.sm))
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    WatchSyncManager.shared.sendCommand("pause")
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "pause.fill")
-                            .font(.system(size: 9))
-                        Text("Pause")
-                    }
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(ICareColors.textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, ICareSpacing.xs)
-                    .background(ICareColors.separator.opacity(0.6))
-                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.sm))
-                }
-                .buttonStyle(.plain)
+                    .clipShape(Circle())
             }
+            .buttonStyle(.plain)
         }
     }
 
@@ -190,25 +178,15 @@ struct WatchHomeView: View {
             ZStack {
                 ProgressRing(
                     progress: progress,
-                    size: 120,
-                    trackWidth: 4,
-                    fillWidth: 4,
-                    trackColor: ICareColors.separator,
-                    fillColor: ICareColors.brand
+                    size: 120
                 )
                 .animation(.linear(duration: 1), value: progress)
 
-                VStack(spacing: 2) {
-                    Text(countdownString(seconds: remaining))
-                        .font(.system(size: 28, weight: .light, design: .rounded))
-                        .foregroundStyle(ICareColors.textPrimary)
-                        .monospacedDigit()
-                        .contentTransition(.numericText())
-
-                    Text(nextBreakTimeLabel(at: context.date))
-                        .font(.system(size: 10))
-                        .foregroundStyle(ICareColors.textTertiary)
-                }
+                Text("\(remaining)")
+                    .font(.system(size: 34, weight: .light, design: .monospaced))
+                    .foregroundStyle(ICareColors.textPrimary)
+                    .contentTransition(.numericText())
+                    .animation(ICareAnimation.countdown, value: remaining)
             }
         }
     }
