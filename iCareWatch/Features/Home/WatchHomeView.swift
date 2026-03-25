@@ -89,71 +89,76 @@ struct WatchHomeView: View {
                 ? geo.size.height * 0.28
                 : geo.size.height * 0.43
 
-            ZStack {
-                ringContent
-                    .frame(width: geo.size.width, height: 120)
-                    .position(x: geo.size.width / 2, y: ringY)
-
-                if hasBottomButtons {
-                    VStack(spacing: ICareSpacing.xs) {
-                        Button {
-                            appState.startBreak()
-                            showCountdown = true
-                        } label: {
-                            Text("Start break")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, ICareSpacing.sm)
-                                .background(ICareColors.brand)
-                                .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
-                        }
-                        .buttonStyle(.plain)
-
-                        HStack(spacing: ICareSpacing.xs) {
-                            Button {
-                                WatchSyncManager.shared.sendCommand("reset")
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "arrow.counterclockwise")
-                                        .font(.system(size: 10, weight: .medium))
-                                    Text("Reset")
-                                }
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(ICareColors.textSecondary)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, ICareSpacing.xs)
-                                .background(ICareColors.separator.opacity(0.6))
-                                .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.sm))
-                            }
-                            .buttonStyle(.plain)
-
-                            Button {
-                                WatchSyncManager.shared.sendCommand("pause")
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "pause.fill")
-                                        .font(.system(size: 9))
-                                    Text("Pause")
-                                }
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(ICareColors.textSecondary)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, ICareSpacing.xs)
-                                .background(ICareColors.separator.opacity(0.6))
-                                .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.sm))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, ICareSpacing.base)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                    .padding(.bottom, 2)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            Color.clear
+                .frame(width: geo.size.width, height: geo.size.height)
+                .overlay {
+                    ringContent
+                        .frame(width: geo.size.width, height: 120)
+                        .position(x: geo.size.width / 2, y: ringY)
                 }
+                .overlay(alignment: .bottom) {
+                    if hasBottomButtons {
+                        bottomButtons
+                            .padding(.horizontal, ICareSpacing.base)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .animation(.easeInOut(duration: 0.4), value: hasBottomButtons)
+                .animation(.easeInOut(duration: 0.35), value: appState.currentStatus)
+        }
+    }
+
+    private var bottomButtons: some View {
+        VStack(spacing: ICareSpacing.xs) {
+            Button {
+                appState.startBreak()
+                showCountdown = true
+            } label: {
+                Text("Start break")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, ICareSpacing.sm)
+                    .background(ICareColors.brand)
+                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
             }
-            .animation(.easeInOut(duration: 0.4), value: hasBottomButtons)
-            .animation(.easeInOut(duration: 0.35), value: appState.currentStatus)
+            .buttonStyle(.plain)
+
+            HStack(spacing: ICareSpacing.xs) {
+                Button {
+                    WatchSyncManager.shared.sendCommand("reset")
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 10, weight: .medium))
+                        Text("Reset")
+                    }
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(ICareColors.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, ICareSpacing.xs)
+                    .background(ICareColors.separator.opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.sm))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    WatchSyncManager.shared.sendCommand("pause")
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pause.fill")
+                            .font(.system(size: 9))
+                        Text("Pause")
+                    }
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(ICareColors.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, ICareSpacing.xs)
+                    .background(ICareColors.separator.opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.sm))
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
