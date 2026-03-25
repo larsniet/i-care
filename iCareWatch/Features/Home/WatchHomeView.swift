@@ -84,19 +84,24 @@ struct WatchHomeView: View {
     }
 
     private var mainDashboard: some View {
-        VStack(spacing: 0) {
-            if !hasBottomButtons {
-                Spacer()
-            }
+        VStack(spacing: ICareSpacing.md) {
+            Spacer(minLength: 0)
 
             ringContent
                 .frame(height: 120)
 
-            Spacer()
+            Spacer(minLength: 0)
 
+            Color.clear
+                .frame(height: 17)
+        }
+        .padding(.horizontal, ICareSpacing.base)
+        .padding(.bottom, ICareSpacing.sm)
+        .overlay(alignment: .bottom) {
             if hasBottomButtons {
                 bottomButtons
                     .padding(.horizontal, ICareSpacing.base)
+                    .padding(.bottom, ICareSpacing.sm)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
