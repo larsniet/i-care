@@ -14,19 +14,53 @@ struct WatchCountdownView: View {
         ZStack {
             ICareColors.surface.ignoresSafeArea()
 
-            if isComplete {
-                completeContent
-            } else if let endDate {
+            if let endDate {
                 TimelineView(.periodic(from: .distantPast, by: 1)) { context in
                     let remaining = max(0, Int(endDate.timeIntervalSince(context.date)))
-                    let progress = 1.0 - (Double(remaining) / Double(max(1, duration)))
+                    let progress = isComplete ? 1.0 : 1.0 - (Double(remaining) / Double(max(1, duration)))
 
-                    countdownContent(remaining: remaining, progress: progress)
-                        .onChange(of: remaining) { _, newValue in
-                            if newValue <= 0 && !isComplete {
-                                finishBreak(type: .completed)
+                    VStack(spacing: ICareSpacing.md) {
+                        Spacer(minLength: 0)
+
+                        ZStack {
+                            ProgressRing(
+                                progress: progress,
+                                size: 120
+                            )
+
+                            if isComplete {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 44))
+                                    .foregroundStyle(ICareColors.brand)
+                                    .transition(.scale.combined(with: .opacity))
+                            } else {
+                                Text("\(remaining)")
+                                    .font(.system(size: 34, weight: .light, design: .monospaced))
+                                    .foregroundStyle(ICareColors.textPrimary)
+                                    .contentTransition(.numericText())
+                                    .animation(ICareAnimation.countdown, value: remaining)
+                                    .transition(.scale.combined(with: .opacity))
                             }
                         }
+
+                        Spacer(minLength: 0)
+
+                        Button("Skip") {
+                            finishBreak(type: .skipped)
+                        }
+                        .font(ICareTypography.caption)
+                        .foregroundStyle(ICareColors.textSecondary)
+                        .buttonStyle(.plain)
+                        .opacity(isComplete ? 0 : 1)
+                        .animation(.easeInOut(duration: 0.3), value: isComplete)
+                    }
+                    .padding(.horizontal, ICareSpacing.base)
+                    .padding(.bottom, ICareSpacing.sm)
+                    .onChange(of: remaining) { _, newValue in
+                        if newValue <= 0 && !isComplete {
+                            finishBreak(type: .completed)
+                        }
+                    }
                 }
             }
         }
@@ -66,56 +100,6 @@ struct WatchCountdownView: View {
         }
     }
 
-    private func countdownContent(remaining: Int, progress: Double) -> some View {
-        VStack(spacing: ICareSpacing.md) {
-            Spacer(minLength: 0)
-
-            ZStack {
-                ProgressRing(
-                    progress: progress,
-                    size: 120
-                )
-
-                Text("\(remaining)")
-                    .font(.system(size: 34, weight: .light, design: .monospaced))
-                    .foregroundStyle(ICareColors.textPrimary)
-                    .contentTransition(.numericText())
-                    .animation(ICareAnimation.countdown, value: remaining)
-            }
-
-            Spacer(minLength: 0)
-
-            Button("Skip") {
-                finishBreak(type: .skipped)
-            }
-            .font(ICareTypography.caption)
-            .foregroundStyle(ICareColors.textSecondary)
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, ICareSpacing.base)
-        .padding(.bottom, ICareSpacing.sm)
-    }
-
-    private var completeContent: some View {
-        VStack(spacing: ICareSpacing.md) {
-            Spacer(minLength: 0)
-
-            ZStack {
-                ProgressRing(
-                    progress: 1.0,
-                    size: 120
-                )
-
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 44))
-                    .foregroundStyle(ICareColors.brand)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, ICareSpacing.base)
-        .transition(.scale.combined(with: .opacity))
-    }
 
     private func finishBreak(type: BreakCompletionType) {
         guard !isComplete || type == .skipped else { return }
