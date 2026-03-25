@@ -85,11 +85,14 @@ struct WatchHomeView: View {
 
     private var mainDashboard: some View {
         GeometryReader { geo in
-            VStack(spacing: 0) {
+            let ringY = hasBottomButtons
+                ? geo.size.height * 0.28
+                : geo.size.height * 0.43
+
+            ZStack {
                 ringContent
                     .frame(width: geo.size.width, height: 120)
-
-                Spacer()
+                    .position(x: geo.size.width / 2, y: ringY)
 
                 if hasBottomButtons {
                     VStack(spacing: ICareSpacing.xs) {
@@ -144,10 +147,12 @@ struct WatchHomeView: View {
                         }
                     }
                     .padding(.horizontal, ICareSpacing.base)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .padding(.bottom, 2)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .frame(width: geo.size.width, height: geo.size.height)
+            .animation(.easeInOut(duration: 0.4), value: hasBottomButtons)
             .animation(.easeInOut(duration: 0.35), value: appState.currentStatus)
         }
     }
