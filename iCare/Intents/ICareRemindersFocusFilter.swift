@@ -4,7 +4,7 @@ struct ICareRemindersFocusFilter: SetFocusFilterIntent {
 
     static var title: LocalizedStringResource = "Eye Care Reminders"
     static var description: IntentDescription? = IntentDescription(
-        "Control icare reminders during this Focus mode.",
+        "Control iCare reminders during this Focus mode.",
         categoryName: "Reminders"
     )
 

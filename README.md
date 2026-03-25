@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="logo.png" width="128" height="128" alt="icare logo">
+  <img src="logo.png" width="128" height="128" alt="iCare logo">
 </p>
 
-<h1 align="center">icare</h1>
+<h1 align="center">iCare</h1>
 
 <p align="center">
   A free, minimal 20-20-20 eye-break reminder for iPhone and Apple Watch.
@@ -16,7 +16,7 @@
 
 ---
 
-icare helps you follow the [20-20-20 rule](https://www.aao.org/eye-health/tips-prevention/computer-usage): every 20 minutes, look at something 20 feet away for 20 seconds. It sends quiet reminders on a schedule you control, and a single tap starts a short countdown so you can get back to work.
+iCare helps you follow the [20-20-20 rule](https://www.aao.org/eye-health/tips-prevention/computer-usage): every 20 minutes, look at something 20 feet away for 20 seconds. It sends quiet reminders on a schedule you control, and a single tap starts a short countdown so you can get back to work.
 
 The app is fully usable on iPhone alone and meaningfully better with Apple Watch, where reminders arrive as subtle haptic taps on your wrist.
 
@@ -68,8 +68,8 @@ fastlane/              Fastlane config for signing and releases
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/<your-org>/icare.git
-cd icare
+git clone https://github.com/<your-org>/iCare.git
+cd iCare
 
 # 2. Generate the Xcode project
 xcodegen generate
@@ -96,13 +96,13 @@ See `fastlane/Fastfile` for details.
 
 ## Architecture
 
-icare is a pure SwiftUI app with no external dependencies. Key design decisions:
+iCare is a pure SwiftUI app with no external dependencies. Key design decisions:
 
 - **`AppState`** is the central observable model shared across views. It owns reminder scheduling, break state, notification handling, and Watch sync.
 - **`ReminderEngine`** manages the scheduling cadence -- intervals, active hours, weekday filtering, pause/resume, and snooze.
 - **`NotificationCoordinator`** handles all `UserNotifications` interactions including actionable notification categories (Start / Snooze / Skip).
 - **`WatchSyncManager`** bridges iPhone and Watch state via `WatchConnectivity`, syncing settings and relaying commands in both directions.
-- **`SettingsStore`** persists user preferences in `UserDefaults` with an App Group (`group.com.icare.shared`) so both targets can access shared state.
+- **`SettingsStore`** persists user preferences in `UserDefaults` with an App Group (`group.com.iCare.shared`) so both targets can access shared state.
 - **Focus filter** is implemented as an `SetFocusFilterIntent` (App Intents framework), allowing users to customize reminder behavior per Focus mode.
 
 For the full technical design, see [`docs/technical/architecture.md`](docs/technical/architecture.md).
@@ -129,7 +129,7 @@ Contributions are welcome! If you'd like to help:
 3. Make your changes and verify they build on both iPhone and Watch simulators
 4. Open a pull request with a clear description of what you changed and why
 
-Please keep changes focused -- icare intentionally avoids feature bloat. See the [MVP spec](docs/product/mvp_spec.md) for the project's scope philosophy.
+Please keep changes focused -- iCare intentionally avoids feature bloat. See the [MVP spec](docs/product/mvp_spec.md) for the project's scope philosophy.
 
 ## License
 

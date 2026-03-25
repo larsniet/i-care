@@ -25,7 +25,7 @@ struct OnboardingFlow: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 32, height: 32)
-                        Text("icare")
+                        Text("iCare")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(ICareColors.brand)
                     }

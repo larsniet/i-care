@@ -10,7 +10,7 @@ struct FocusModeStep: View {
                     .foregroundStyle(ICareColors.textPrimary)
                     .padding(.bottom, ICareSpacing.sm)
 
-                Text("Link icare to Work, Study, or any Focus mode so reminders activate automatically.")
+                Text("Link iCare to Work, Study, or any Focus mode so reminders activate automatically.")
                     .font(ICareTypography.body)
                     .foregroundStyle(ICareColors.textSecondary)
                     .padding(.bottom, ICareSpacing.xxl)
@@ -24,7 +24,7 @@ struct FocusModeStep: View {
                     instructionCard(
                         step: "2",
                         title: "Add a Focus Filter",
-                        detail: "Scroll down and tap \"Add Filter\", then select icare"
+                        detail: "Scroll down and tap \"Add Filter\", then select iCare"
                     )
                     instructionCard(
                         step: "3",
