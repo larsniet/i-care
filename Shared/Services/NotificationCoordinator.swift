@@ -88,15 +88,8 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     }
 
     func cancelPendingReminders() {
-        center.getPendingNotificationRequests { [weak self] requests in
-            guard let prefix = self.map({ _ in Self.reminderIDPrefix }) else { return }
-            let ids = requests
-                .map(\.identifier)
-                .filter { $0.hasPrefix(prefix) }
-            if !ids.isEmpty {
-                self?.center.removePendingNotificationRequests(withIdentifiers: ids)
-            }
-        }
+        let ids = (0..<ReminderEngine.maxBatchSize).map { "\(Self.reminderIDPrefix)\($0)" }
+        center.removePendingNotificationRequests(withIdentifiers: ids)
     }
 
     // MARK: - Break Complete Notification

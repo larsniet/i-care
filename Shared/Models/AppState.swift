@@ -163,8 +163,12 @@ final class AppState: ObservableObject {
     // MARK: - Public
 
     func refreshNotificationStatus() async {
+        let previous = notificationAuthorizationStatus
         notificationAuthorizationStatus = await notificationCoordinator.currentStatus()
         hasCheckedNotificationStatus = true
+        if notificationAuthorizationStatus != previous {
+            scheduleReminders(force: true)
+        }
         sendSyncContext()
     }
 
@@ -216,6 +220,7 @@ final class AppState: ObservableObject {
             settings: effectiveSettings
         )
         guard let first = dates.first else {
+            notificationCoordinator.cancelPendingReminders()
             runtimeState.nextReminderAt = nil
             return
         }
@@ -280,6 +285,7 @@ final class AppState: ObservableObject {
 
     func pause() {
         runtimeState.isPaused = true
+        runtimeState.nextReminderAt = nil
         notificationCoordinator.cancelPendingReminders()
         sendSyncContext()
     }
@@ -391,6 +397,7 @@ final class AppState: ObservableObject {
             }
 
             self.isSyncingFromRemote = false
+            self.scheduleReminders(force: true)
         }
 
         syncManager.onCommandReceived = { [weak self] command, payload in
@@ -407,6 +414,8 @@ final class AppState: ObservableObject {
                 let duration = Double(self.settings.breakDurationSeconds)
                 guard elapsed < duration else { break }
                 self.breakStartedAt = started
+                let completeAt = started.addingTimeInterval(duration)
+                self.notificationCoordinator.scheduleBreakComplete(at: completeAt, soundEnabled: self.settings.soundEnabled)
                 self.pendingAction = .startBreak
             case "endBreak":
                 let wasActive = self.breakStartedAt != nil
