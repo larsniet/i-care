@@ -20,6 +20,16 @@ iCare helps you follow the [20-20-20 rule](https://www.aao.org/eye-health/tips-p
 
 The app is fully usable on iPhone alone and meaningfully better with Apple Watch, where reminders arrive as subtle haptic taps on your wrist.
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/page1.jpg" width="200" alt="Home screen with countdown">
+  <img src="screenshots/page2.jpg" width="200" alt="Break countdown with Apple Watch sync">
+  <img src="screenshots/page3.jpg" width="200" alt="Schedule setup">
+  <img src="screenshots/page4.jpg" width="200" alt="Onboarding with 20-20-20 rule">
+  <img src="screenshots/page5.jpg" width="200" alt="Focus mode integration">
+</p>
+
 ## Features
 
 - **Recurring local reminders** on a configurable interval (15 -- 45 minutes)
