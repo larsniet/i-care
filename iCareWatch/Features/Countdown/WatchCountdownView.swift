@@ -35,7 +35,8 @@ struct WatchCountdownView: View {
                                     .transition(.scale.combined(with: .opacity))
                             } else {
                                 Text("\(remaining)")
-                                    .font(.system(size: 34, weight: .light, design: .monospaced))
+                                    .font(.system(size: 34, weight: .light, design: .rounded))
+                                    .monospacedDigit()
                                     .foregroundStyle(ICareColors.textPrimary)
                                     .contentTransition(.numericText())
                                     .animation(ICareAnimation.countdown, value: remaining)

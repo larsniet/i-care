@@ -44,9 +44,10 @@ struct HomeActiveRing: View {
 
                     Text(countdownString(seconds: remaining))
                         .font(.system(size: 52, weight: .light, design: .rounded))
-                        .foregroundStyle(ICareColors.textPrimary)
                         .monospacedDigit()
+                        .foregroundStyle(ICareColors.textPrimary)
                         .contentTransition(.numericText())
+                        .animation(ICareAnimation.countdown, value: remaining)
 
                     Text(nextBreakLabel(at: context.date))
                         .font(.system(size: 15, weight: .regular))

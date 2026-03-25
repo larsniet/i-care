@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum ICareTypography {
-    static let displayLarge = Font.system(size: 48, weight: .light, design: .monospaced)
+    static let displayLarge = Font.system(size: 48, weight: .light, design: .rounded)
     static let displaySmall = Font.system(size: 34, weight: .regular)
     static let title = Font.system(size: 20, weight: .semibold)
     static let headline = Font.system(size: 17, weight: .medium)

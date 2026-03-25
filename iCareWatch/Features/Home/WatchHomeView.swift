@@ -182,7 +182,8 @@ struct WatchHomeView: View {
                 .animation(.linear(duration: 1), value: progress)
 
                 Text(countdownString(seconds: remaining))
-                    .font(.system(size: 34, weight: .light, design: .monospaced))
+                    .font(.system(size: 34, weight: .light, design: .rounded))
+                    .monospacedDigit()
                     .foregroundStyle(ICareColors.textPrimary)
                     .contentTransition(.numericText())
                     .animation(ICareAnimation.countdown, value: remaining)

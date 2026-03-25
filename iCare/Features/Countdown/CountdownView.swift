@@ -85,8 +85,10 @@ struct CountdownView: View {
 
                     Text("\(remaining)")
                         .font(ICareTypography.displayLarge)
+                        .monospacedDigit()
                         .foregroundStyle(ICareColors.textPrimary)
                         .contentTransition(.numericText())
+                        .animation(ICareAnimation.countdown, value: remaining)
                 }
 
                 Text("Look at something in the distance")
