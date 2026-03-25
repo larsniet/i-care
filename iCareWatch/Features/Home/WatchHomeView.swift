@@ -10,7 +10,12 @@ struct WatchHomeView: View {
             ZStack {
                 ICareColors.surface.ignoresSafeArea()
 
-                if !appState.hasCompletedOnboarding {
+                if showCountdown {
+                    WatchCountdownView(isPresented: $showCountdown)
+                        .environmentObject(appState)
+                        .transition(.opacity)
+                        .zIndex(1)
+                } else if !appState.hasCompletedOnboarding {
                     setupNeededContent
                 } else if appState.currentStatus == .blocked {
                     blockedContent
@@ -20,10 +25,7 @@ struct WatchHomeView: View {
                     mainDashboard
                 }
             }
-            .navigationDestination(isPresented: $showCountdown) {
-                WatchCountdownView()
-                    .environmentObject(appState)
-            }
+            .animation(.easeInOut(duration: 0.35), value: showCountdown)
             .onReceive(appState.$pendingAction) { action in
                 guard let action else { return }
                 appState.pendingAction = nil

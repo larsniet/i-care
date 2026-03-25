@@ -7,44 +7,51 @@ struct WatchNotificationView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: ICareSpacing.sm) {
-                Text("Time for a break")
-                    .font(ICareTypography.headline)
-                    .foregroundStyle(ICareColors.textPrimary)
-                    .multilineTextAlignment(.center)
+            ZStack {
+                ICareColors.surface.ignoresSafeArea()
 
-                Text("Look away for 20 seconds")
-                    .font(ICareTypography.body)
-                    .foregroundStyle(ICareColors.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.85)
+                if showCountdown {
+                    WatchCountdownView(isPresented: $showCountdown)
+                        .environmentObject(appState)
+                        .transition(.opacity)
+                        .zIndex(1)
+                } else {
+                    VStack(spacing: ICareSpacing.sm) {
+                        Text("Time for a break")
+                            .font(ICareTypography.headline)
+                            .foregroundStyle(ICareColors.textPrimary)
+                            .multilineTextAlignment(.center)
 
-                Button {
-                    appState.startBreak()
-                    showCountdown = true
-                } label: {
-                    Text("Start")
-                        .font(ICareTypography.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, ICareSpacing.md)
-                        .background(ICareColors.brand)
-                        .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
-                }
-                .buttonStyle(.plain)
+                        Text("Look away for 20 seconds")
+                            .font(ICareTypography.body)
+                            .foregroundStyle(ICareColors.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .minimumScaleFactor(0.85)
 
-                SecondaryButton(title: "Snooze") {
-                    appState.snooze()
-                    dismiss()
+                        Button {
+                            appState.startBreak()
+                            showCountdown = true
+                        } label: {
+                            Text("Start")
+                                .font(ICareTypography.headline)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, ICareSpacing.md)
+                                .background(ICareColors.brand)
+                                .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
+                        }
+                        .buttonStyle(.plain)
+
+                        SecondaryButton(title: "Snooze") {
+                            appState.snooze()
+                            dismiss()
+                        }
+                    }
+                    .padding(.horizontal, ICareSpacing.md)
+                    .padding(.vertical, ICareSpacing.sm)
                 }
             }
-            .padding(.horizontal, ICareSpacing.md)
-            .padding(.vertical, ICareSpacing.sm)
-            .background(ICareColors.surface)
-            .navigationDestination(isPresented: $showCountdown) {
-                WatchCountdownView()
-                    .environmentObject(appState)
-            }
+            .animation(.easeInOut(duration: 0.35), value: showCountdown)
         }
     }
 }

@@ -3,7 +3,7 @@ import WatchKit
 
 struct WatchCountdownView: View {
     @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
+    @Binding var isPresented: Bool
 
     @State private var isComplete = false
     @State private var didPlayStartHaptic = false
@@ -64,7 +64,7 @@ struct WatchCountdownView: View {
                 }
             }
         }
-        .navigationBarBackButtonHidden(true)
+        
         .onAppear {
             guard endDate == nil else { return }
             duration = max(1, appState.settings.breakDurationSeconds)
@@ -90,12 +90,12 @@ struct WatchCountdownView: View {
         .onChange(of: isComplete) { _, complete in
             guard complete else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                dismiss()
+                isPresented = false
             }
         }
         .onChange(of: appState.breakStartedAt) { _, newValue in
             if newValue == nil && !isComplete {
-                dismiss()
+                isPresented = false
             }
         }
     }
