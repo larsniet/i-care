@@ -397,7 +397,7 @@ final class AppState: ObservableObject {
             }
 
             self.isSyncingFromRemote = false
-            self.scheduleReminders(force: true)
+            self.syncNotifications(phoneNextReminderAt: nextReminderAt)
         }
 
         syncManager.onCommandReceived = { [weak self] command, payload in
@@ -427,6 +427,30 @@ final class AppState: ObservableObject {
                 }
             default: break
             }
+        }
+    }
+
+    private func syncNotifications(phoneNextReminderAt: Date?) {
+        guard isFullyOperational else {
+            notificationCoordinator.cancelPendingReminders()
+            runtimeState.nextReminderAt = nil
+            return
+        }
+
+        let effectiveSettings = settingsWithFocusOverrides()
+
+        if let phoneNext = phoneNextReminderAt, phoneNext.timeIntervalSinceNow > 0 {
+            runtimeState.nextReminderAt = phoneNext
+            var dates = [phoneNext]
+            let rest = ReminderEngine.upcomingReminderDates(
+                after: phoneNext,
+                settings: effectiveSettings,
+                limit: ReminderEngine.maxBatchSize - 1
+            )
+            dates.append(contentsOf: rest)
+            notificationCoordinator.scheduleReminders(at: dates, settings: effectiveSettings)
+        } else {
+            scheduleReminders(force: true)
         }
     }
     #endif
