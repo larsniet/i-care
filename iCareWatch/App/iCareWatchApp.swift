@@ -40,6 +40,7 @@ struct iCareWatchApp: App {
                         at: completeAt, soundEnabled: appState.settings.soundEnabled
                     )
                     appState.pendingAction = .startBreak
+                    WatchSyncManager.shared.sendWatchBreakState(breakStartedAt: started)
                 }
         }
 

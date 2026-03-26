@@ -9,6 +9,7 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
     var onSessionActivated: (@MainActor () -> Void)?
     var contextProvider: (() -> [String: Any])?
     var onCommandReceived: (@MainActor (_ command: String, _ payload: [String: Any]) -> Void)?
+    var onWatchBreakStateReceived: (@MainActor (_ breakStartedAt: Date?) -> Void)?
     #endif
 
     #if os(watchOS)
@@ -119,6 +120,13 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
     // MARK: - Watch → iPhone
 
     #if os(watchOS)
+    func sendWatchBreakState(breakStartedAt: Date?) {
+        guard WCSession.default.activationState == .activated else { return }
+        try? WCSession.default.updateApplicationContext([
+            "breakStartedAt": breakStartedAt?.timeIntervalSince1970 ?? 0
+        ])
+    }
+
     func requestContextFromPhone() {
         guard WCSession.default.activationState == .activated,
               WCSession.default.isReachable else {
@@ -171,6 +179,9 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
     ) {
         #if os(watchOS)
         applyContext(applicationContext)
+        #endif
+        #if os(iOS)
+        applyWatchState(applicationContext)
         #endif
     }
 
@@ -251,6 +262,16 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
     #endif
 
     // MARK: - Private
+
+    #if os(iOS)
+    private func applyWatchState(_ context: [String: Any]) {
+        guard let ts = context["breakStartedAt"] as? TimeInterval else { return }
+        let breakStartedAt = ts > 0 ? Date(timeIntervalSince1970: ts) : nil
+        Task { @MainActor in
+            onWatchBreakStateReceived?(breakStartedAt)
+        }
+    }
+    #endif
 
     #if os(watchOS)
     private func applyContext(_ context: [String: Any]) {

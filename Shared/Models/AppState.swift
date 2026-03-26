@@ -144,6 +144,24 @@ final class AppState: ObservableObject {
             default: break
             }
         }
+        syncManager.onWatchBreakStateReceived = { [weak self] breakStartedAt in
+            guard let self else { return }
+            if let started = breakStartedAt, self.breakStartedAt == nil {
+                let elapsed = Date().timeIntervalSince(started)
+                let dur = Double(self.settings.breakDurationSeconds)
+                guard elapsed < dur else { return }
+                self.breakStartedAt = started
+                let completeAt = started.addingTimeInterval(dur)
+                self.notificationCoordinator.scheduleBreakComplete(
+                    at: completeAt, soundEnabled: self.settings.soundEnabled
+                )
+                self.pendingAction = .startBreak
+            } else if breakStartedAt == nil, self.breakStartedAt != nil {
+                self.breakStartedAt = nil
+                self.notificationCoordinator.cancelBreakComplete()
+                self.completeBreak(type: .completed, device: .watch)
+            }
+        }
         #endif
         #if os(watchOS)
         if !syncManager.isBound {
@@ -300,6 +318,7 @@ final class AppState: ObservableObject {
     // MARK: - Private
 
     private func sendSyncContext() {
+        #if os(iOS)
         syncManager.sendContext(
             settings: settings,
             onboarded: hasCompletedOnboarding,
@@ -308,6 +327,10 @@ final class AppState: ObservableObject {
             nextReminderAt: runtimeState.nextReminderAt,
             breakStartedAt: breakStartedAt
         )
+        #endif
+        #if os(watchOS)
+        syncManager.sendWatchBreakState(breakStartedAt: breakStartedAt)
+        #endif
     }
 
     #if os(iOS)
