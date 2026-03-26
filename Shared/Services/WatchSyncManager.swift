@@ -95,15 +95,25 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
         #endif
         var message: [String: Any] = ["command": command]
         message.merge(payload) { current, _ in current }
-        WCSession.default.sendMessage(
-            message,
-            replyHandler: { [weak self] reply in
-                #if os(watchOS)
-                if !reply.isEmpty { self?.applyContext(reply) }
-                #endif
-            },
-            errorHandler: nil
-        )
+
+        #if os(watchOS)
+        // Queue via transferUserInfo for guaranteed delivery even when
+        // the phone isn't reachable. Handlers are idempotent, so a
+        // duplicate from the real-time path below is harmless.
+        WCSession.default.transferUserInfo(message)
+        #endif
+
+        if WCSession.default.isReachable {
+            WCSession.default.sendMessage(
+                message,
+                replyHandler: { [weak self] reply in
+                    #if os(watchOS)
+                    if !reply.isEmpty { self?.applyContext(reply) }
+                    #endif
+                },
+                errorHandler: nil
+            )
+        }
     }
 
     // MARK: - Watch → iPhone
@@ -219,6 +229,18 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
         }
         replyHandler([:])
         #endif
+    }
+
+    func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        guard let command = userInfo["command"] as? String else { return }
+        Task { @MainActor in
+            #if os(iOS)
+            onCommandReceived?(command, userInfo)
+            #endif
+            #if os(watchOS)
+            onCommandReceived?(command, userInfo)
+            #endif
+        }
     }
 
     #if os(iOS)

@@ -88,11 +88,10 @@ struct WatchCountdownView: View {
                 appState.endBreak(type: .skipped, device: .watch)
             }
         }
-        .onChange(of: isComplete) { _, complete in
-            guard complete else { return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                isPresented = false
-            }
+        .task(id: isComplete) {
+            guard isComplete else { return }
+            try? await Task.sleep(for: .seconds(2))
+            isPresented = false
         }
         .onChange(of: appState.breakStartedAt) { _, newValue in
             if newValue == nil && !isComplete {
