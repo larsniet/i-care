@@ -49,12 +49,14 @@
 		AF07D90DECF481D9BC4BF2A4 /* FocusFilterState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF60C34EEC5B053765CB3492 /* FocusFilterState.swift */; };
 		BAB818FB357920AFC3F2ED80 /* HomeInactiveContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6025C2E6D026BF5C9100D /* HomeInactiveContent.swift */; };
 		BBBDC593912D1E4D93E8029E /* WatchSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DA86464644B22D6DDEC9A3 /* WatchSyncManager.swift */; };
+		A1B2C3D4E5F6078901234567 /* SyncState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7890ABC1234 /* SyncState.swift */; };
 		BC94BE8ED90E217B4DAF5E4E /* WelcomeStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB3AB4D9B0DCA29B4392D73 /* WelcomeStep.swift */; };
 		BCA8879B4025DE2A3A8F839A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D7334BA6C6CD39A3EDA7127E /* Assets.xcassets */; };
 		C0D40E81FA7C499DD64270C8 /* HomePausedContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCCE58EA64EBDCC7300F3E8C /* HomePausedContent.swift */; };
 		CD71E02B9288BC6B8765C38A /* ICareAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628CC728193114C990C507AF /* ICareAnimation.swift */; };
 		D1F5E50002282D85B13694A5 /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A616E980CC699A986BF3C7E /* OnboardingComponents.swift */; };
 		D805231D98EB2B48101E881B /* WatchSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DA86464644B22D6DDEC9A3 /* WatchSyncManager.swift */; };
+		B1C2D3E4F5A6078901234568 /* SyncState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7890ABC1234 /* SyncState.swift */; };
 		D9E592A490EB19D961D2AF11 /* ScheduleSetupStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C5BFEA7A6A3C3D7C4A19B53 /* ScheduleSetupStep.swift */; };
 		DA695F794CA8BD0284113A7C /* ReminderSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D07CF6C265CF285039ADE0B /* ReminderSettings.swift */; };
 		DC6C673EB3D09C64CA29548D /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC09812B917956EC37A0B037 /* SettingsStore.swift */; };
@@ -138,6 +140,7 @@
 		DDDC0ED373BEBFAC5B4823DB /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
 		E390A8DA5711BE59BBDAF828 /* CompletionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionTracker.swift; sourceTree = "<group>"; };
 		E4DA86464644B22D6DDEC9A3 /* WatchSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncManager.swift; sourceTree = "<group>"; };
+		F1A2B3C4D5E6F7890ABC1234 /* SyncState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncState.swift; sourceTree = "<group>"; };
 		E6DEA62E084AF2125845E9E4 /* DailySummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySummary.swift; sourceTree = "<group>"; };
 		E6E5DB240D21C337D7FB78E8 /* HomeActiveContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeActiveContent.swift; sourceTree = "<group>"; };
 		E7664DF05CB1748734ED54C6 /* iCare.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iCare.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -304,6 +307,7 @@
 				AF60C34EEC5B053765CB3492 /* FocusFilterState.swift */,
 				76011611D99AD47F9A474500 /* ReminderRuntimeState.swift */,
 				9D07CF6C265CF285039ADE0B /* ReminderSettings.swift */,
+				F1A2B3C4D5E6F7890ABC1234 /* SyncState.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -499,6 +503,7 @@
 				EB531488C79832F6EC689B10 /* WatchCountdownView.swift in Sources */,
 				F784B5681DDD03CAB28EDE15 /* WatchHomeView.swift in Sources */,
 				AC0C237928585059A36DF112 /* WatchNotificationView.swift in Sources */,
+				A1B2C3D4E5F6078901234567 /* SyncState.swift in Sources */,
 				BBBDC593912D1E4D93E8029E /* WatchSyncManager.swift in Sources */,
 				3C284B77491B25299FA24FE4 /* iCareWatchApp.swift in Sources */,
 			);
@@ -541,6 +546,7 @@
 				02E175EF8253498B976A00EC /* SettingsStore.swift in Sources */,
 				FE104C0EE25F1DC93DA55DB5 /* SettingsView.swift in Sources */,
 				5AEB7D253377EE49285C5287 /* StatusBadge.swift in Sources */,
+				B1C2D3E4F5A6078901234568 /* SyncState.swift in Sources */,
 				D805231D98EB2B48101E881B /* WatchSyncManager.swift in Sources */,
 				BC94BE8ED90E217B4DAF5E4E /* WelcomeStep.swift in Sources */,
 				289E462AE1482F4FDAD061F3 /* iCareApp.swift in Sources */,

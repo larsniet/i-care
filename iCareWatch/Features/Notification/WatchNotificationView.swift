@@ -43,7 +43,7 @@ struct WatchNotificationView: View {
                         .buttonStyle(.plain)
 
                         SecondaryButton(title: "Skip") {
-                            appState.completeBreak(type: .skipped, device: .watch)
+                            appState.skipReminder(device: .watch)
                             dismiss()
                         }
                     }

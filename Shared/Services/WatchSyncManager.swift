@@ -5,19 +5,13 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
 
     static let shared = WatchSyncManager()
 
-    #if os(iOS)
+    var onStateReceived: (@MainActor (SyncState) -> Void)?
     var onSessionActivated: (@MainActor () -> Void)?
-    var contextProvider: (() -> [String: Any])?
-    var onCommandReceived: (@MainActor (_ command: String, _ payload: [String: Any]) -> Void)?
-    var onWatchBreakStateReceived: (@MainActor (_ breakStartedAt: Date?) -> Void)?
-    #endif
+    var onSyncRequested: (@MainActor () -> Void)?
 
-    #if os(watchOS)
-    var onContextReceived: (@MainActor (_ settings: ReminderSettings, _ onboarded: Bool, _ notificationsAuthorized: Bool, _ isPaused: Bool, _ nextReminderAt: Date?, _ breakStartedAt: Date?) -> Void)?
-    var onCommandReceived: (@MainActor (_ command: String, _ payload: [String: Any]) -> Void)?
-    private(set) var isBound = false
-    func markBound() { isBound = true }
-    #endif
+    private(set) var acceptedState: SyncState?
+
+    var currentVersion: Int { acceptedState?.version ?? 0 }
 
     private override init() {
         super.init()
@@ -29,125 +23,43 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
         WCSession.default.activate()
     }
 
-    // MARK: - iOS → Watch
+    // MARK: - Publish
 
-    func sendContext(
-        settings: ReminderSettings,
-        onboarded: Bool,
-        notificationsAuthorized: Bool = false,
-        isPaused: Bool = false,
-        nextReminderAt: Date? = nil,
-        breakStartedAt: Date? = nil
-    ) {
-        #if os(iOS)
-        guard WCSession.default.activationState == .activated,
-              WCSession.default.isPaired,
-              WCSession.default.isWatchAppInstalled else { return }
+    func publishState(_ state: SyncState) {
+        guard let data = try? JSONEncoder().encode(state) else { return }
+        acceptedState = state
 
-        let context = buildContext(
-            settings: settings,
-            onboarded: onboarded,
-            notificationsAuthorized: notificationsAuthorized,
-            isPaused: isPaused,
-            nextReminderAt: nextReminderAt,
-            breakStartedAt: breakStartedAt
-        )
-
-        try? WCSession.default.updateApplicationContext(context)
-
-        if WCSession.default.isReachable {
-            WCSession.default.sendMessage(context, replyHandler: nil, errorHandler: nil)
-        }
-        #endif
-    }
-
-    #if os(iOS)
-    private func buildContext(
-        settings: ReminderSettings,
-        onboarded: Bool,
-        notificationsAuthorized: Bool,
-        isPaused: Bool,
-        nextReminderAt: Date?,
-        breakStartedAt: Date? = nil
-    ) -> [String: Any] {
-        var context: [String: Any] = [
-            "onboarded": onboarded,
-            "notificationsAuthorized": notificationsAuthorized,
-            "isPaused": isPaused,
-        ]
-        if let data = try? JSONEncoder().encode(settings) {
-            context["settings"] = data
-        }
-        if let date = nextReminderAt {
-            context["nextReminderAt"] = date.timeIntervalSince1970
-        }
-        context["breakStartedAt"] = breakStartedAt?.timeIntervalSince1970 ?? 0
-        return context
-    }
-    #endif
-
-    // MARK: - Bidirectional Commands
-
-    func sendCommand(_ command: String, payload: [String: Any] = [:]) {
         guard WCSession.default.activationState == .activated else { return }
         #if os(iOS)
         guard WCSession.default.isPaired,
               WCSession.default.isWatchAppInstalled else { return }
         #endif
-        var message: [String: Any] = ["command": command]
-        message.merge(payload) { current, _ in current }
 
-        #if os(watchOS)
-        // Queue via transferUserInfo for guaranteed delivery even when
-        // the phone isn't reachable. Handlers are idempotent, so a
-        // duplicate from the real-time path below is harmless.
-        WCSession.default.transferUserInfo(message)
-        #endif
+        try? WCSession.default.updateApplicationContext(["syncState": data])
 
         if WCSession.default.isReachable {
             WCSession.default.sendMessage(
-                message,
-                replyHandler: { [weak self] reply in
-                    #if os(watchOS)
-                    if !reply.isEmpty { self?.applyContext(reply) }
-                    #endif
-                },
+                ["event": "stateChanged"],
+                replyHandler: nil,
                 errorHandler: nil
             )
         }
     }
 
-    // MARK: - Watch → iPhone
+    // MARK: - Request
 
-    #if os(watchOS)
-    func sendWatchBreakState(breakStartedAt: Date?) {
+    func requestSync() {
         guard WCSession.default.activationState == .activated else { return }
-        try? WCSession.default.updateApplicationContext([
-            "breakStartedAt": breakStartedAt?.timeIntervalSince1970 ?? 0
-        ])
-    }
-
-    func requestContextFromPhone() {
-        guard WCSession.default.activationState == .activated,
-              WCSession.default.isReachable else {
-            reapplyReceivedContext()
-            return
-        }
-        WCSession.default.sendMessage(["request": "state"], replyHandler: { [weak self] reply in
-            self?.applyContext(reply)
-        }, errorHandler: { [weak self] _ in
-            self?.reapplyReceivedContext()
-        })
-    }
-
-    func reapplyReceivedContext() {
-        guard WCSession.isSupported(),
-              WCSession.default.activationState == .activated else { return }
         let context = WCSession.default.receivedApplicationContext
-        guard !context.isEmpty else { return }
-        applyContext(context)
+        if !context.isEmpty { applyIncoming(context) }
+        if WCSession.default.isReachable {
+            WCSession.default.sendMessage(
+                ["event": "requestSync"],
+                replyHandler: nil,
+                errorHandler: nil
+            )
+        }
     }
-    #endif
 
     // MARK: - WCSessionDelegate
 
@@ -157,53 +69,23 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
         error: Error?
     ) {
         guard activationState == .activated else { return }
-
-        #if os(iOS)
-        Task { @MainActor in
-            onSessionActivated?()
-        }
-        #endif
-
-        #if os(watchOS)
         let context = session.receivedApplicationContext
-        if !context.isEmpty {
-            applyContext(context)
-        }
-        requestContextFromPhone()
-        #endif
+        if !context.isEmpty { applyIncoming(context) }
+        Task { @MainActor in onSessionActivated?() }
     }
 
     func session(
         _ session: WCSession,
         didReceiveApplicationContext applicationContext: [String: Any]
     ) {
-        #if os(watchOS)
-        applyContext(applicationContext)
-        #endif
-        #if os(iOS)
-        applyWatchState(applicationContext)
-        #endif
+        applyIncoming(applicationContext)
     }
 
     func session(
         _ session: WCSession,
         didReceiveMessage message: [String: Any]
     ) {
-        if let command = message["command"] as? String {
-            Task { @MainActor in
-                #if os(iOS)
-                onCommandReceived?(command, message)
-                #endif
-                #if os(watchOS)
-                onCommandReceived?(command, message)
-                #endif
-            }
-            return
-        }
-
-        #if os(watchOS)
-        applyContext(message)
-        #endif
+        handleMessage(message)
     }
 
     func session(
@@ -211,47 +93,8 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
         didReceiveMessage message: [String: Any],
         replyHandler: @escaping ([String: Any]) -> Void
     ) {
-        #if os(iOS)
-        if message["request"] as? String == "state" {
-            DispatchQueue.main.async { [weak self] in
-                let context = self?.contextProvider?() ?? [:]
-                replyHandler(context)
-            }
-        } else if let command = message["command"] as? String {
-            Task { @MainActor in
-                onCommandReceived?(command, message)
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                let context = self?.contextProvider?() ?? [:]
-                replyHandler(context)
-            }
-        } else {
-            replyHandler([:])
-        }
-        #endif
-
-        #if os(watchOS)
-        if let command = message["command"] as? String {
-            Task { @MainActor in
-                onCommandReceived?(command, message)
-            }
-        } else {
-            applyContext(message)
-        }
+        handleMessage(message)
         replyHandler([:])
-        #endif
-    }
-
-    func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
-        guard let command = userInfo["command"] as? String else { return }
-        Task { @MainActor in
-            #if os(iOS)
-            onCommandReceived?(command, userInfo)
-            #endif
-            #if os(watchOS)
-            onCommandReceived?(command, userInfo)
-            #endif
-        }
     }
 
     #if os(iOS)
@@ -263,37 +106,40 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
 
     // MARK: - Private
 
-    #if os(iOS)
-    private func applyWatchState(_ context: [String: Any]) {
-        guard let ts = context["breakStartedAt"] as? TimeInterval else { return }
-        let breakStartedAt = ts > 0 ? Date(timeIntervalSince1970: ts) : nil
-        Task { @MainActor in
-            onWatchBreakStateReceived?(breakStartedAt)
+    private func handleMessage(_ message: [String: Any]) {
+        guard let event = message["event"] as? String else { return }
+        switch event {
+        case "stateChanged":
+            let context = WCSession.default.receivedApplicationContext
+            if !context.isEmpty { applyIncoming(context) }
+        case "requestSync":
+            Task { @MainActor in onSyncRequested?() }
+        default:
+            break
         }
     }
-    #endif
 
-    #if os(watchOS)
-    private func applyContext(_ context: [String: Any]) {
-        let onboarded = context["onboarded"] as? Bool ?? false
-        let notificationsAuthorized = context["notificationsAuthorized"] as? Bool ?? false
-        let isPaused = context["isPaused"] as? Bool ?? false
-        var settings = ReminderSettings()
-        if let data = context["settings"] as? Data,
-           let decoded = try? JSONDecoder().decode(ReminderSettings.self, from: data) {
-            settings = decoded
-        }
-        var nextReminderAt: Date?
-        if let ts = context["nextReminderAt"] as? TimeInterval {
-            nextReminderAt = Date(timeIntervalSince1970: ts)
-        }
-        var breakStartedAt: Date?
-        if let ts = context["breakStartedAt"] as? TimeInterval, ts > 0 {
-            breakStartedAt = Date(timeIntervalSince1970: ts)
-        }
-        Task { @MainActor in
-            onContextReceived?(settings, onboarded, notificationsAuthorized, isPaused, nextReminderAt, breakStartedAt)
+    private func applyIncoming(_ context: [String: Any]) {
+        guard let data = context["syncState"] as? Data,
+              let incoming = try? JSONDecoder().decode(SyncState.self, from: data) else { return }
+        guard shouldAccept(incoming) else { return }
+        acceptedState = incoming
+        Task { @MainActor in onStateReceived?(incoming) }
+    }
+
+    private func shouldAccept(_ incoming: SyncState) -> Bool {
+        guard let current = acceptedState else { return true }
+        if incoming.version > current.version { return true }
+        if incoming.version < current.version { return false }
+        if incoming.updatedAt > current.updatedAt { return true }
+        if incoming.updatedAt < current.updatedAt { return false }
+        return originPriority(incoming.origin) > originPriority(current.origin)
+    }
+
+    private func originPriority(_ origin: SyncOrigin) -> Int {
+        switch origin {
+        case .phone: return 0
+        case .watch: return 1
         }
     }
-    #endif
 }

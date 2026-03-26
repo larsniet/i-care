@@ -16,7 +16,6 @@ struct iCareApp: App {
                     appState.notificationCoordinator.isAppInForeground = true
                     appState.refreshFocusFilterState()
                     Task { await appState.refreshNotificationStatus() }
-                    appState.scheduleReminders()
                 }
                 .onReceive(
                     NotificationCenter.default.publisher(

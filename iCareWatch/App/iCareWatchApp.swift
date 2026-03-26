@@ -16,7 +16,7 @@ struct iCareWatchApp: App {
                     )
                 ) { _ in
                     appState.notificationCoordinator.isAppInForeground = true
-                    WatchSyncManager.shared.requestContextFromPhone()
+                    WatchSyncManager.shared.requestSync()
                 }
                 .onReceive(
                     NotificationCenter.default.publisher(
@@ -34,13 +34,7 @@ struct iCareWatchApp: App {
                     let elapsed = Date().timeIntervalSince(started)
                     let duration = Double(appState.settings.breakDurationSeconds)
                     guard elapsed < duration else { return }
-                    appState.breakStartedAt = started
-                    let completeAt = started.addingTimeInterval(duration)
-                    appState.notificationCoordinator.scheduleBreakComplete(
-                        at: completeAt, soundEnabled: appState.settings.soundEnabled
-                    )
-                    appState.pendingAction = .startBreak
-                    WatchSyncManager.shared.sendWatchBreakState(breakStartedAt: started)
+                    appState.startBreak()
                 }
         }
 

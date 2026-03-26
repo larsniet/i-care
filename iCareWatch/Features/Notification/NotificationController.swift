@@ -38,9 +38,6 @@ struct WatchNotificationBody: View {
                     object: nil,
                     userInfo: ["breakStartedAt": now.timeIntervalSince1970]
                 )
-                WatchSyncManager.shared.sendCommand("startBreak", payload: [
-                    "breakStartedAt": now.timeIntervalSince1970
-                ])
             } label: {
                 Text("Start")
                     .font(ICareTypography.headline)

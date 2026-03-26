@@ -1,5 +1,4 @@
 import SwiftUI
-import WatchConnectivity
 
 struct WatchHomeView: View {
     @EnvironmentObject private var appState: AppState
@@ -68,7 +67,7 @@ struct WatchHomeView: View {
         .onReceive(
             Timer.publish(every: 3, on: .main, in: .common).autoconnect()
         ) { _ in
-            WatchSyncManager.shared.requestContextFromPhone()
+            WatchSyncManager.shared.requestSync()
         }
     }
 
@@ -114,7 +113,7 @@ struct WatchHomeView: View {
     private var bottomButtons: some View {
         HStack(spacing: ICareSpacing.sm) {
             Button {
-                WatchSyncManager.shared.sendCommand("reset")
+                appState.resetTimer()
             } label: {
                 Image(systemName: "arrow.counterclockwise")
                     .font(.system(size: 12, weight: .medium))
@@ -140,7 +139,7 @@ struct WatchHomeView: View {
             .buttonStyle(.plain)
 
             Button {
-                WatchSyncManager.shared.sendCommand("pause")
+                appState.pause()
             } label: {
                 Image(systemName: "pause.fill")
                     .font(.system(size: 11))
@@ -223,7 +222,7 @@ struct WatchHomeView: View {
 
     private var pausedRing: some View {
         Button {
-            WatchSyncManager.shared.sendCommand("resume")
+            appState.resume()
         } label: {
             ZStack {
                 ProgressRing(
