@@ -41,11 +41,6 @@ struct iCareWatchApp: App {
                     )
                     appState.pendingAction = .startBreak
                 }
-                .onReceive(
-                    NotificationCenter.default.publisher(for: .iCareSkip)
-                ) { _ in
-                    appState.completeBreak(type: .skipped, device: .watch)
-                }
         }
 
         WKNotificationScene(

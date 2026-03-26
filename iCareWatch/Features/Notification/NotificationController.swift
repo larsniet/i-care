@@ -52,16 +52,6 @@ struct WatchNotificationBody: View {
             }
             .buttonStyle(.plain)
 
-            Button {
-                NotificationCenter.default.post(name: .iCareSkip, object: nil)
-            } label: {
-                Text("Skip")
-                    .font(ICareTypography.headline)
-                    .foregroundStyle(ICareColors.textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 36)
-            }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, ICareSpacing.md)
         .padding(.vertical, ICareSpacing.sm)
@@ -71,5 +61,4 @@ struct WatchNotificationBody: View {
 
 extension Notification.Name {
     static let iCareStartBreak = Notification.Name("icare.action.startBreak")
-    static let iCareSkip = Notification.Name("icare.action.skip")
 }
