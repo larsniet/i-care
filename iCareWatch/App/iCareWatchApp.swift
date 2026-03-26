@@ -42,9 +42,9 @@ struct iCareWatchApp: App {
                     appState.pendingAction = .startBreak
                 }
                 .onReceive(
-                    NotificationCenter.default.publisher(for: .iCareSnooze)
+                    NotificationCenter.default.publisher(for: .iCareSkip)
                 ) { _ in
-                    appState.snooze()
+                    appState.completeBreak(type: .skipped, device: .watch)
                 }
         }
 

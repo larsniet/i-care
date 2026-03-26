@@ -53,9 +53,9 @@ struct WatchNotificationBody: View {
             .buttonStyle(.plain)
 
             Button {
-                NotificationCenter.default.post(name: .iCareSnooze, object: nil)
+                NotificationCenter.default.post(name: .iCareSkip, object: nil)
             } label: {
-                Text("Snooze")
+                Text("Skip")
                     .font(ICareTypography.headline)
                     .foregroundStyle(ICareColors.textSecondary)
                     .frame(maxWidth: .infinity)
@@ -71,5 +71,5 @@ struct WatchNotificationBody: View {
 
 extension Notification.Name {
     static let iCareStartBreak = Notification.Name("icare.action.startBreak")
-    static let iCareSnooze = Notification.Name("icare.action.snooze")
+    static let iCareSkip = Notification.Name("icare.action.skip")
 }

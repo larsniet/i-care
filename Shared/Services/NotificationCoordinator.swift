@@ -7,13 +7,11 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
 
     static let categoryIdentifier = "ICARE_REMINDER"
     static let startActionID = "ICARE_START"
-    static let snoozeActionID = "ICARE_SNOOZE"
     static let skipActionID = "ICARE_SKIP"
     static let reminderIDPrefix = "icare.reminder."
     static let breakCompleteID = "icare.break.complete"
 
     var onStartBreak: (@MainActor () -> Void)?
-    var onSnooze: (@MainActor () -> Void)?
     var onSkip: (@MainActor () -> Void)?
 
     private let center = UNUserNotificationCenter.current()
@@ -31,10 +29,6 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
             title: "Start",
             options: .foreground
         )
-        let snooze = UNNotificationAction(
-            identifier: Self.snoozeActionID,
-            title: "Snooze"
-        )
         let skip = UNNotificationAction(
             identifier: Self.skipActionID,
             title: "Skip"
@@ -42,7 +36,7 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
 
         let category = UNNotificationCategory(
             identifier: Self.categoryIdentifier,
-            actions: [start, snooze, skip],
+            actions: [start, skip],
             intentIdentifiers: []
         )
         center.setNotificationCategories([category])
@@ -155,8 +149,6 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
             switch action {
             case Self.startActionID, UNNotificationDefaultActionIdentifier:
                 onStartBreak?()
-            case Self.snoozeActionID:
-                onSnooze?()
             case Self.skipActionID:
                 onSkip?()
             default:

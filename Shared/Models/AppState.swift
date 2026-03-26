@@ -459,9 +459,6 @@ final class AppState: ObservableObject {
         coordinator.onStartBreak = { [weak self] in
             self?.pendingAction = .startBreak
         }
-        coordinator.onSnooze = { [weak self] in
-            self?.snooze()
-        }
         coordinator.onSkip = { [weak self] in
             self?.completeBreak(type: .skipped)
         }

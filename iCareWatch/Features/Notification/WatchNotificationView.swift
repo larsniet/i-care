@@ -42,8 +42,8 @@ struct WatchNotificationView: View {
                         }
                         .buttonStyle(.plain)
 
-                        SecondaryButton(title: "Snooze") {
-                            appState.snooze()
+                        SecondaryButton(title: "Skip") {
+                            appState.completeBreak(type: .skipped, device: .watch)
                             dismiss()
                         }
                     }
