@@ -6,8 +6,6 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     static let shared = NotificationCoordinator()
 
     static let categoryIdentifier = "ICARE_REMINDER"
-    static let startActionID = "ICARE_START"
-    static let skipActionID = "ICARE_SKIP"
     static let reminderIDPrefix = "icare.reminder."
     static let breakCompleteID = "icare.break.complete"
 
@@ -24,20 +22,11 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     // MARK: - Setup
 
     func registerCategories() {
-        let start = UNNotificationAction(
-            identifier: Self.startActionID,
-            title: "Start",
-            options: .foreground
-        )
-        let skip = UNNotificationAction(
-            identifier: Self.skipActionID,
-            title: "Skip"
-        )
-
         let category = UNNotificationCategory(
             identifier: Self.categoryIdentifier,
-            actions: [start, skip],
-            intentIdentifiers: []
+            actions: [],
+            intentIdentifiers: [],
+            options: .customDismissAction
         )
         center.setNotificationCategories([category])
     }
@@ -147,9 +136,9 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
 
         Task { @MainActor in
             switch action {
-            case Self.startActionID, UNNotificationDefaultActionIdentifier:
+            case UNNotificationDefaultActionIdentifier:
                 onStartBreak?()
-            case Self.skipActionID:
+            case UNNotificationDismissActionIdentifier:
                 onSkip?()
             default:
                 break
