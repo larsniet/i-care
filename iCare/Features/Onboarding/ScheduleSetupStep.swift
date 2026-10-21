@@ -84,13 +84,21 @@ struct ScheduleSetupStep: View {
                     )
 
                     if activeHoursEnabled.wrappedValue {
-                        HStack(spacing: ICareSpacing.sm) {
-                            timeBlock(label: "START", binding: startTimeBinding)
-                            Image(systemName: "arrow.right")
-                                .scaledFont(size: 12, weight: .medium)
-                                .foregroundStyle(ICareColors.textTertiary)
-                            timeBlock(label: "END", binding: endTimeBinding)
-                            Spacer(minLength: 0)
+                        // Side by side, or stacked when large text doesn't fit.
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: ICareSpacing.sm) {
+                                timeBlock(label: "START", binding: startTimeBinding)
+                                Image(systemName: "arrow.right")
+                                    .scaledFont(size: 12, weight: .medium)
+                                    .foregroundStyle(ICareColors.textTertiary)
+                                timeBlock(label: "END", binding: endTimeBinding)
+                                Spacer(minLength: 0)
+                            }
+                            VStack(alignment: .leading, spacing: ICareSpacing.sm) {
+                                timeBlock(label: "START", binding: startTimeBinding)
+                                timeBlock(label: "END", binding: endTimeBinding)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(.horizontal, ICareSpacing.base)
                         .padding(.bottom, ICareSpacing.base)
@@ -171,6 +179,7 @@ struct ScheduleSetupStep: View {
         HStack(spacing: ICareSpacing.xs) {
             Text(label)
                 .scaledFont(size: 10, weight: .semibold)
+                .fixedSize()
                 .foregroundStyle(ICareColors.textTertiary)
                 .tracking(0.5)
             DatePicker("", selection: binding, displayedComponents: .hourAndMinute)

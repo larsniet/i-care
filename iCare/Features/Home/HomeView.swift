@@ -76,6 +76,8 @@ struct HomeView: View {
 
             ZStack(alignment: .top) {
                 ringView
+                    // The ring is a fixed size, so its labels can only grow so far.
+                    .dynamicTypeSize(...DynamicTypeSize.xLarge)
                     .frame(width: geo.size.width, height: ringSize)
                     .scaleEffect(ringScale)
                     .position(x: geo.size.width / 2, y: ringArea / 2)

@@ -32,25 +32,23 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
             title: "Start",
             options: [.foreground]
         )
+        // watchOS adds its own Dismiss button (which only closes the notification),
+        // so ours gets a distinct name there instead of showing "Dismiss" twice.
+        #if os(watchOS)
+        let dismissTitle = "Skip break"
+        #else
+        let dismissTitle = "Dismiss"
+        #endif
         let dismissAction = UNNotificationAction(
             identifier: Self.dismissActionID,
-            title: "Dismiss",
+            title: dismissTitle,
             options: [.destructive]
         )
-        // watchOS already adds its own Dismiss button, so ours would show up twice.
-        // The system's Dismiss only reaches us with .customDismissAction.
-        #if os(watchOS)
-        let actions = [startAction]
-        let options: UNNotificationCategoryOptions = [.customDismissAction]
-        #else
-        let actions = [startAction, dismissAction]
-        let options: UNNotificationCategoryOptions = []
-        #endif
         let category = UNNotificationCategory(
             identifier: Self.categoryIdentifier,
-            actions: actions,
+            actions: [startAction, dismissAction],
             intentIdentifiers: [],
-            options: options
+            options: []
         )
         center.setNotificationCategories([category])
     }
@@ -178,12 +176,7 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
                 } else {
                     UserDefaults.standard.set(true, forKey: Self.pendingStartActionKey)
                 }
-            case Self.dismissActionID, UNNotificationDismissActionIdentifier:
-                // On iPhone, swiping a reminder away isn't a decision to skip the break.
-                // On the Watch the system Dismiss button replaces ours, so it is.
-                #if !os(watchOS)
-                guard action == Self.dismissActionID else { break }
-                #endif
+            case Self.dismissActionID:
                 if let onDismiss {
                     onDismiss()
                 } else {

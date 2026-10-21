@@ -77,7 +77,7 @@ struct CountdownView: View {
                         size: 200,
                         trackWidth: 2,
                         fillWidth: 3,
-                        trackColor: ICareColors.brandMuted,
+                        trackColor: ICareColors.ringTrack,
                         fillColor: ICareColors.brand
                     )
 
