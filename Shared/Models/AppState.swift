@@ -438,6 +438,10 @@ final class AppState: ObservableObject {
                     }
                     breakStartedAt = nil
                     notificationCoordinator.cancelBreakComplete()
+                    // This state still says "in a break", so nothing would schedule the
+                    // next reminders until another sync arrived. Move on to work now.
+                    let breakEndedAt = started.addingTimeInterval(duration)
+                    DispatchQueue.main.async { self.leaveExpiredBreak(endedAt: breakEndedAt) }
                 }
             } else {
                 breakStartedAt = nil
@@ -446,7 +450,17 @@ final class AppState: ObservableObject {
         case .awaitingBreak:
             breakStartedAt = nil
             notificationCoordinator.cancelBreakComplete()
-            notificationCoordinator.cancelPendingReminders()
+            // Keep the follow-up reminders an unanswered break would get anyway.
+            if canScheduleLocally, let due = state.nextReminderAt {
+                let dates = ReminderEngine.upcomingReminderDates(
+                    after: due,
+                    settings: effectiveSettings,
+                    limit: ReminderEngine.maxBatchSize
+                ).filter { $0.timeIntervalSinceNow > 0 }
+                notificationCoordinator.scheduleReminders(at: dates, settings: effectiveSettings)
+            } else {
+                notificationCoordinator.cancelPendingReminders()
+            }
         case .work:
             breakStartedAt = nil
             notificationCoordinator.cancelBreakComplete()
@@ -590,6 +604,24 @@ final class AppState: ObservableObject {
         runtimeState.lastReminderHandledAt = Date()
         if type == .completed {
             runtimeState.lastReminderFiredAt = Date()
+        }
+    }
+
+    /// Publishes the end of a break that ran out unseen, with the next reminder after it.
+    private func leaveExpiredBreak(endedAt: Date) {
+        // Another device (or an earlier call) may already have moved on.
+        guard breakStartedAt == nil, syncManager.acceptedState?.phase == .break else { return }
+        commitAndPublish { state in
+            state.phase = .work
+            state.phaseStartedAt = nil
+            state.phaseEndsAt = nil
+            state.breakDevice = nil
+            state.nextReminderAt = ReminderEngine.upcomingReminderDates(
+                after: endedAt,
+                settings: self.settingsWithFocusOverrides(),
+                limit: 1
+            ).first
+            self.recomputeDerivedFields(&state)
         }
     }
 

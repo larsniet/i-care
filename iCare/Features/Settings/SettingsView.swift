@@ -91,7 +91,7 @@ struct SettingsView: View {
                             .foregroundStyle(ICareColors.textPrimary)
                         Spacer()
                         Picker("", selection: intervalMinutesBinding) {
-                            ForEach(intervalOptions, id: \.self) { minutes in
+                            ForEach(Set(intervalOptions + [selectedIntervalMinutes]).sorted(), id: \.self) { minutes in
                                 Text("\(minutes) min").tag(minutes)
                             }
                         }
@@ -109,7 +109,7 @@ struct SettingsView: View {
                             .foregroundStyle(ICareColors.textPrimary)
                         Spacer()
                         Picker("", selection: breakDurationSecondsBinding) {
-                            ForEach(breakDurationOptions, id: \.self) { seconds in
+                            ForEach(Set(breakDurationOptions + [selectedBreakDurationSeconds]).sorted(), id: \.self) { seconds in
                                 Text("\(seconds) sec").tag(seconds)
                             }
                         }

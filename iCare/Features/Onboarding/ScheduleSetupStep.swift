@@ -38,7 +38,7 @@ struct ScheduleSetupStep: View {
                         subtitle: "Remind me every...",
                         trailing: {
                             Picker("", selection: intervalBinding) {
-                                ForEach(intervalOptions, id: \.self) { m in
+                                ForEach(Set(intervalOptions + [selectedIntervalMinutes]).sorted(), id: \.self) { m in
                                     Text("\(m)m").tag(m)
                                 }
                             }
@@ -55,7 +55,7 @@ struct ScheduleSetupStep: View {
                         subtitle: "Length of your rest",
                         trailing: {
                             Picker("", selection: breakBinding) {
-                                ForEach(breakOptions, id: \.self) { s in
+                                ForEach(Set(breakOptions + [selectedBreakDurationSeconds]).sorted(), id: \.self) { s in
                                     Text("\(s)s").tag(s)
                                 }
                             }
