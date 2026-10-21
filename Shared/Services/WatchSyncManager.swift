@@ -1,8 +1,8 @@
+import Communicator
 import Foundation
-import WatchConnectivity
 
-final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
-
+final class WatchSyncManager: @unchecked Sendable {
+ 
     static let shared = WatchSyncManager()
 
     var onStateReceived: (@MainActor (SyncState) -> Void)?
@@ -11,116 +11,77 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
 
     private(set) var acceptedState: SyncState?
 
+    
     var currentVersion: Int { acceptedState?.version ?? 0 }
 
-    private override init() {
-        super.init()
-    }
+    private init() {}
 
     func activate() {
-        guard WCSession.isSupported() else { return }
-        WCSession.default.delegate = self
-        WCSession.default.activate()
+        Context.observe { [weak self] context in
+            self?.applyIncoming(context.content)
+        }
+
+        ImmediateMessage.observe { [weak self] message in
+            switch message.identifier {
+            case "stateChanged":
+                let previous = self?.acceptedState
+                let context = Communicator.shared.mostRecentlyReceievedContext
+                self?.applyIncoming(context.content)
+                if self?.acceptedState == previous,
+                   Communicator.shared.currentReachability == .immediatelyReachable {
+                    let request = ImmediateMessage(identifier: "requestSync")
+                    Communicator.shared.send(request)
+                }
+            case "requestSync":
+                Task { @MainActor in self?.onSyncRequested?() }
+            default:
+                break
+            }
+        }
+
+        Communicator.State.observe { [weak self] state in
+            guard state == .activated else { return }
+            let context = Communicator.shared.mostRecentlyReceievedContext
+            self?.applyIncoming(context.content)
+            Task { @MainActor in self?.onSessionActivated?() }
+        }
     }
 
     // MARK: - Publish
+
+    func bootstrapAcceptedState(_ state: SyncState) {
+        guard shouldAccept(state) else { return }
+        acceptedState = state
+    }
 
     func publishState(_ state: SyncState) {
         guard let data = try? JSONEncoder().encode(state) else { return }
         acceptedState = state
 
-        guard WCSession.default.activationState == .activated else { return }
-        #if os(iOS)
-        guard WCSession.default.isPaired,
-              WCSession.default.isWatchAppInstalled else { return }
-        #endif
+        let context = Context(content: ["syncState": data])
+        try? Communicator.shared.sync(context)
 
-        try? WCSession.default.updateApplicationContext(["syncState": data])
-
-        if WCSession.default.isReachable {
-            WCSession.default.sendMessage(
-                ["event": "stateChanged"],
-                replyHandler: nil,
-                errorHandler: nil
-            )
+        if Communicator.shared.currentReachability == .immediatelyReachable {
+            let nudge = ImmediateMessage(identifier: "stateChanged")
+            Communicator.shared.send(nudge)
         }
     }
 
     // MARK: - Request
 
     func requestSync() {
-        guard WCSession.default.activationState == .activated else { return }
-        let context = WCSession.default.receivedApplicationContext
-        if !context.isEmpty { applyIncoming(context) }
-        if WCSession.default.isReachable {
-            WCSession.default.sendMessage(
-                ["event": "requestSync"],
-                replyHandler: nil,
-                errorHandler: nil
-            )
+        let context = Communicator.shared.mostRecentlyReceievedContext
+        applyIncoming(context.content)
+        if Communicator.shared.currentReachability == .immediatelyReachable {
+            let request = ImmediateMessage(identifier: "requestSync")
+            Communicator.shared.send(request)
         }
     }
-
-    // MARK: - WCSessionDelegate
-
-    func session(
-        _ session: WCSession,
-        activationDidCompleteWith activationState: WCSessionActivationState,
-        error: Error?
-    ) {
-        guard activationState == .activated else { return }
-        let context = session.receivedApplicationContext
-        if !context.isEmpty { applyIncoming(context) }
-        Task { @MainActor in onSessionActivated?() }
-    }
-
-    func session(
-        _ session: WCSession,
-        didReceiveApplicationContext applicationContext: [String: Any]
-    ) {
-        applyIncoming(applicationContext)
-    }
-
-    func session(
-        _ session: WCSession,
-        didReceiveMessage message: [String: Any]
-    ) {
-        handleMessage(message)
-    }
-
-    func session(
-        _ session: WCSession,
-        didReceiveMessage message: [String: Any],
-        replyHandler: @escaping ([String: Any]) -> Void
-    ) {
-        handleMessage(message)
-        replyHandler([:])
-    }
-
-    #if os(iOS)
-    func sessionDidBecomeInactive(_ session: WCSession) {}
-    func sessionDidDeactivate(_ session: WCSession) {
-        session.activate()
-    }
-    #endif
 
     // MARK: - Private
 
-    private func handleMessage(_ message: [String: Any]) {
-        guard let event = message["event"] as? String else { return }
-        switch event {
-        case "stateChanged":
-            let context = WCSession.default.receivedApplicationContext
-            if !context.isEmpty { applyIncoming(context) }
-        case "requestSync":
-            Task { @MainActor in onSyncRequested?() }
-        default:
-            break
-        }
-    }
-
-    private func applyIncoming(_ context: [String: Any]) {
-        guard let data = context["syncState"] as? Data,
+    private func applyIncoming(_ content: Content) {
+        guard let data = content["syncState"] as? Data,
               let incoming = try? JSONDecoder().decode(SyncState.self, from: data) else { return }
         guard shouldAccept(incoming) else { return }
         acceptedState = incoming
@@ -138,8 +99,8 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
 
     private func originPriority(_ origin: SyncOrigin) -> Int {
         switch origin {
-        case .phone: return 0
-        case .watch: return 1
+        case .phone: return 1
+        case .watch: return 0
         }
     }
 }

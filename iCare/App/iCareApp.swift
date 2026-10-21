@@ -15,6 +15,7 @@ struct iCareApp: App {
                 ) { _ in
                     appState.notificationCoordinator.isAppInForeground = true
                     appState.refreshFocusFilterState()
+                    WatchSyncManager.shared.requestSync()
                     Task { await appState.refreshNotificationStatus() }
                 }
                 .onReceive(

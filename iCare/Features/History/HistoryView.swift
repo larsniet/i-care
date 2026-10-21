@@ -75,7 +75,7 @@ struct HistoryView: View {
                 )
                 statBlock(
                     value: "\(appState.todaySummary.skippedBreakCount)",
-                    label: "Skipped",
+                    label: "Dismissed",
                     color: ICareColors.statusPaused
                 )
             }
@@ -154,7 +154,7 @@ struct HistoryView: View {
                 .foregroundStyle(record.completionType == .completed ? ICareColors.brand : ICareColors.statusPaused)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(record.completionType == .completed ? "Completed" : "Skipped")
+                Text(record.completionType == .completed ? "Completed" : "Dismissed")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(ICareColors.textPrimary)
                 Text(recordTimeString(record.completedAt))

@@ -39,12 +39,11 @@ struct CountdownView: View {
             didStart = true
             appState.notificationCoordinator.isShowingCountdown = true
             duration = max(1, appState.settings.breakDurationSeconds)
-            if let started = appState.breakStartedAt {
-                endDate = started.addingTimeInterval(Double(duration))
-            } else {
-                let now = Date()
-                endDate = now.addingTimeInterval(Double(duration))
+            // Without a real break, endBreak() records nothing (v1.0.0 notification-tap bug).
+            if appState.breakStartedAt == nil {
+                appState.startBreak()
             }
+            endDate = (appState.breakStartedAt ?? Date()).addingTimeInterval(Double(duration))
             if appState.settings.hapticsEnabled {
                 notificationHaptic.prepare()
                 impactHaptic.prepare()
@@ -81,14 +80,11 @@ struct CountdownView: View {
                         trackColor: ICareColors.brandMuted,
                         fillColor: ICareColors.brand
                     )
-                    .animation(ICareAnimation.countdown, value: progress)
 
                     Text("\(remaining)")
                         .font(ICareTypography.displayLarge)
                         .monospacedDigit()
                         .foregroundStyle(ICareColors.textPrimary)
-                        .contentTransition(.numericText())
-                        .animation(ICareAnimation.countdown, value: remaining)
                 }
 
                 Text("Look at something in the distance")
@@ -100,7 +96,7 @@ struct CountdownView: View {
 
             Spacer()
 
-            SecondaryButton(title: "Skip") {
+            SecondaryButton(title: "Dismiss") {
                 finishBreak(type: .skipped)
             }
             .padding(.bottom, ICareSpacing.xl)

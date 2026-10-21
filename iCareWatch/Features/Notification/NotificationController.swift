@@ -30,32 +30,9 @@ struct WatchNotificationBody: View {
                 .foregroundStyle(ICareColors.textSecondary)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.85)
-
-            Button {
-                let now = Date()
-                NotificationCenter.default.post(
-                    name: .iCareStartBreak,
-                    object: nil,
-                    userInfo: ["breakStartedAt": now.timeIntervalSince1970]
-                )
-            } label: {
-                Text("Start")
-                    .font(ICareTypography.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, ICareSpacing.md)
-                    .background(ICareColors.brand)
-                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
-            }
-            .buttonStyle(.plain)
-
         }
         .padding(.horizontal, ICareSpacing.md)
         .padding(.vertical, ICareSpacing.sm)
         .background(ICareColors.surface)
     }
-}
-
-extension Notification.Name {
-    static let iCareStartBreak = Notification.Name("icare.action.startBreak")
 }

@@ -3,6 +3,7 @@ import Foundation
 enum SyncPhase: String, Codable, Sendable {
     case idle
     case work
+    case awaitingBreak
     case `break`
 }
 
@@ -21,6 +22,7 @@ struct SyncState: Codable, Equatable, Sendable {
     var onboarded: Bool
     var notificationsAuthorized: Bool
     var nextReminderAt: Date?
+    var todayRecords: [BreakRecord]?
     var updatedAt: Date
     var origin: SyncOrigin
 }

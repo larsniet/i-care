@@ -9,6 +9,12 @@
 //   - Shared/Services/NotificationCoordinator.swift
 //   - Shared/Services/ReminderEngine.swift
 //   - iCareWatch/Features/Notification/NotificationController.swift
+//   - iCare/Models/BreakActivityAttributes.swift
+//   - iCare/Models/BreakIntentHandler.swift
+//   - iCare/Intents/StartBreakIntent.swift
+//   - iCare/Intents/DismissBreakIntent.swift
+//   - iCareLiveActivity/BreakLiveActivity.swift
+//   - iCareLiveActivity/iCareLiveActivityBundle.swift
 //
 // Architecture:
 //   commitAndPublish(_ mutate:) is the ONLY local state mutation entry point.
@@ -19,14 +25,45 @@
 //   Local:  action → commitAndPublish → mutate → applyStateLocally → publish
 //   Remote: incoming → version check → applyStateLocally (no publish)
 //
-//   Transport:
-//     updateApplicationContext is the sole state channel.
-//     sendMessage is only a lightweight "stateChanged" nudge.
-//     transferUserInfo is not used.
+//   Transport (via Communicator library — github.com/KaneCheshire/Communicator):
+//     Context is the sole state channel (wraps updateApplicationContext).
+//     ImmediateMessage is only a lightweight "stateChanged" nudge.
+//     No raw WCSession/WCSessionDelegate code.
 //
 //   Conflict resolution:
 //     higher version wins → later updatedAt wins → explicit origin priority.
 //     Manager stores full acceptedState, encodes before accepting.
+//
+//   Watch notification independence:
+//     The watch does NOT depend on iPhone notification mirroring.
+//     applyStateLocally schedules local notifications on BOTH platforms.
+//     The full SyncState is persisted (SettingsStore.save/loadSyncState) and
+//     applied synchronously in init, so even a cold launch of the watch app
+//     immediately schedules notifications from the phone's last known schedule.
+//     recomputeDerivedFields preserves an existing valid nextReminderAt (from
+//     the phone) instead of always recomputing independently.
+//     On watchOS, applyStateLocally also schedules a background refresh task
+//     ~60s before the next reminder to re-sync from the phone.
+//
+//   Notifications — no auto-start:
+//     The reminder notification category has explicit "Start" and "Dismiss"
+//     action buttons. The default tap (UNNotificationDefaultActionIdentifier)
+//     is a no-op — it does NOT start the break. This prevents accidental
+//     auto-start when the user simply taps the notification to view it.
+//
+//   Live Activity (iOS only, via ActivityKit + WidgetKit extension):
+//     When the user taps "Start" on the notification, startBreak() creates a
+//     Live Activity showing the countdown timer on the Lock Screen and Dynamic
+//     Island. The Live Activity has a "Dismiss" button (DismissBreakIntent)
+//     that calls skipReminder() via BreakIntentHandler without opening the app.
+//     The Live Activity is ended when the break completes or is dismissed
+//     (endLiveActivity called from applyStateLocally for .work/.idle phases).
+//     If a break is started remotely (from the watch), applyStateLocally also
+//     starts the Live Activity on the phone for isRemote == true.
+//
+//     Intent flow: Button(intent:) in widget → BreakIntentHandler → AppState
+//     BreakIntentHandler is the compile-time bridge between the widget
+//     extension and the main app. AppState hooks callbacks in init().
 // ============================================================================
 
 
@@ -63,10 +100,11 @@ struct SyncState: Codable, Equatable, Sendable {
 
 // MARK: - ===== WatchSyncManager.swift =====
 // Source: Shared/Services/WatchSyncManager.swift
+// Uses Communicator library (github.com/KaneCheshire/Communicator) instead of raw WCSession.
 
-import WatchConnectivity
+import Communicator
 
-final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
+final class WatchSyncManager: @unchecked Sendable {
 
     static let shared = WatchSyncManager()
 
@@ -78,14 +116,31 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
 
     var currentVersion: Int { acceptedState?.version ?? 0 }
 
-    private override init() {
-        super.init()
-    }
+    private init() {}
 
     func activate() {
-        guard WCSession.isSupported() else { return }
-        WCSession.default.delegate = self
-        WCSession.default.activate()
+        Context.observe { [weak self] context in
+            self?.applyIncoming(context.content)
+        }
+
+        ImmediateMessage.observe { [weak self] message in
+            switch message.identifier {
+            case "stateChanged":
+                let context = Communicator.shared.mostRecentlyReceievedContext
+                    self?.applyIncoming(context.content)
+            case "requestSync":
+                Task { @MainActor in self?.onSyncRequested?() }
+            default:
+                break
+            }
+        }
+
+        Communicator.State.observe { [weak self] state in
+            guard state == .activated else { return }
+            let context = Communicator.shared.mostRecentlyReceievedContext
+            self?.applyIncoming(context.content)
+            Task { @MainActor in self?.onSessionActivated?() }
+        }
     }
 
     // MARK: - Publish
@@ -94,98 +149,30 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
         guard let data = try? JSONEncoder().encode(state) else { return }
         acceptedState = state
 
-        guard WCSession.default.activationState == .activated else { return }
-        #if os(iOS)
-        guard WCSession.default.isPaired,
-              WCSession.default.isWatchAppInstalled else { return }
-        #endif
+        let context = Context(content: ["syncState": data])
+        try? Communicator.shared.sync(context)
 
-        try? WCSession.default.updateApplicationContext(["syncState": data])
-
-        if WCSession.default.isReachable {
-            WCSession.default.sendMessage(
-                ["event": "stateChanged"],
-                replyHandler: nil,
-                errorHandler: nil
-            )
+        if Communicator.shared.currentReachability == .immediatelyReachable {
+            let nudge = ImmediateMessage(identifier: "stateChanged")
+            Communicator.shared.send(nudge)
         }
     }
 
     // MARK: - Request
 
     func requestSync() {
-        guard WCSession.default.activationState == .activated else { return }
-        let context = WCSession.default.receivedApplicationContext
-        if !context.isEmpty { applyIncoming(context) }
-        if WCSession.default.isReachable {
-            WCSession.default.sendMessage(
-                ["event": "requestSync"],
-                replyHandler: nil,
-                errorHandler: nil
-            )
+        let context = Communicator.shared.mostRecentlyReceievedContext
+        applyIncoming(context.content)
+        if Communicator.shared.currentReachability == .immediatelyReachable {
+            let request = ImmediateMessage(identifier: "requestSync")
+            Communicator.shared.send(request)
         }
     }
-
-    // MARK: - WCSessionDelegate
-
-    func session(
-        _ session: WCSession,
-        activationDidCompleteWith activationState: WCSessionActivationState,
-        error: Error?
-    ) {
-        guard activationState == .activated else { return }
-        let context = session.receivedApplicationContext
-        if !context.isEmpty { applyIncoming(context) }
-        Task { @MainActor in onSessionActivated?() }
-    }
-
-    func session(
-        _ session: WCSession,
-        didReceiveApplicationContext applicationContext: [String: Any]
-    ) {
-        applyIncoming(applicationContext)
-    }
-
-    func session(
-        _ session: WCSession,
-        didReceiveMessage message: [String: Any]
-    ) {
-        handleMessage(message)
-    }
-
-    func session(
-        _ session: WCSession,
-        didReceiveMessage message: [String: Any],
-        replyHandler: @escaping ([String: Any]) -> Void
-    ) {
-        handleMessage(message)
-        replyHandler([:])
-    }
-
-    #if os(iOS)
-    func sessionDidBecomeInactive(_ session: WCSession) {}
-    func sessionDidDeactivate(_ session: WCSession) {
-        session.activate()
-    }
-    #endif
 
     // MARK: - Private
 
-    private func handleMessage(_ message: [String: Any]) {
-        guard let event = message["event"] as? String else { return }
-        switch event {
-        case "stateChanged":
-            let context = WCSession.default.receivedApplicationContext
-            if !context.isEmpty { applyIncoming(context) }
-        case "requestSync":
-            Task { @MainActor in onSyncRequested?() }
-        default:
-            break
-        }
-    }
-
-    private func applyIncoming(_ context: [String: Any]) {
-        guard let data = context["syncState"] as? Data,
+    private func applyIncoming(_ content: Content) {
+        guard let data = content["syncState"] as? Data,
               let incoming = try? JSONDecoder().decode(SyncState.self, from: data) else { return }
         guard shouldAccept(incoming) else { return }
         acceptedState = incoming
@@ -216,6 +203,23 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
 // Only the pipeline and transition methods are shown here.
 // Full file includes @Published properties, computed helpers, init, etc.
 
+// --- init: load persisted SyncState and schedule immediately ---
+//
+// init() {
+//     ...load properties from SettingsStore...
+//     bindNotificationActions(coordinator)
+//     bindSyncManager()
+//     if let persisted = SettingsStore.loadSyncState() {
+//         applyStateLocally(persisted, isRemote: false) // ← schedules notifications NOW
+//     }
+//     syncManager.activate()
+//     Task { await refreshNotificationStatus() }
+// }
+//
+// On the watch, this means notifications are scheduled from the phone's
+// last known nextReminderAt before sync even fires. A cold launch of the
+// watch app immediately has the right schedule.
+
 // --- commitAndPublish: the ONLY local mutation entry point ---
 //
 // private func commitAndPublish(_ mutate: (inout SyncState) -> Void) {
@@ -235,16 +239,28 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
 //     isApplyingState = true
 //     defer { isApplyingState = false }
 //
-//     // 1. Write @Published properties from state
+//     // 1. Persist the full SyncState:  SettingsStore.save(state)
+//
+//     // 2. Write @Published properties from state
 //     //    (settings, onboarded, notificationAuth, isPaused, nextReminderAt)
 //
-//     // 2. Phase-driven notification management:
+//     // 3. Phase-driven notification management:
 //     //    .break → cancel reminders, schedule break-complete, set breakStartedAt
 //     //    .work  → cancel break-complete, schedule reminders from nextReminderAt
 //     //    .idle  → cancel everything
 //
-//     // 3. If isRemote && phase == .break → set pendingAction = .startBreak
+//     // 4. If isRemote && phase == .break → set pendingAction = .startBreak
+//
+//     // 5. [watchOS only] Schedule background refresh ~60s before nextReminderAt
 // }
+
+// --- recomputeDerivedFields: preserves valid phone-synced nextReminderAt ---
+//
+// Callers that need a FRESH schedule (endBreak, skipReminder, resume,
+// resetTimer, onSettingsChanged, onFocusFilterChanged) clear
+// state.nextReminderAt = nil before calling recomputeDerivedFields.
+// refreshNotificationStatus and buildCurrentSyncState preserve the
+// existing nextReminderAt if it is still in the future.
 
 // --- All transitions go through commitAndPublish ---
 //
@@ -260,9 +276,8 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
 // func endBreak(type:device:) {
 //     recordBreak(type:device:)
 //     commitAndPublish { state in
-//         state.phase = .work
-//         state.phaseStartedAt = nil
-//         state.phaseEndsAt = nil
+//         state.phase = .work; state.phaseStartedAt = nil; state.phaseEndsAt = nil
+//         state.nextReminderAt = nil   // ← clear before recompute
 //         recomputeDerivedFields(&state)
 //     }
 // }
@@ -270,17 +285,16 @@ final class WatchSyncManager: NSObject, WCSessionDelegate, @unchecked Sendable {
 // func skipReminder(device:) {
 //     recordBreak(type: .skipped, device:)
 //     commitAndPublish { state in
-//         state.phase = .work
-//         state.phaseStartedAt = nil
-//         state.phaseEndsAt = nil
+//         state.phase = .work; state.phaseStartedAt = nil; state.phaseEndsAt = nil
+//         state.nextReminderAt = nil   // ← clear before recompute
 //         recomputeDerivedFields(&state)
 //     }
 // }
 //
 // func pause()   { commitAndPublish { $0.isPaused = true; $0.phase = .idle; $0.nextReminderAt = nil } }
-// func resume()  { commitAndPublish { $0.isPaused = false; recomputeDerivedFields(&$0) } }
+// func resume()  { commitAndPublish { $0.isPaused = false; $0.nextReminderAt = nil; recomputeDerivedFields(&$0) } }
 // func snooze()  { commitAndPublish { $0.phase = .work; $0.nextReminderAt = snoozeDate } }
-// func resetTimer() { commitAndPublish { recomputeDerivedFields(&$0) } }
+// func resetTimer() { commitAndPublish { $0.nextReminderAt = nil; recomputeDerivedFields(&$0) } }
 
 // --- Notification actions route through the same pipeline ---
 //

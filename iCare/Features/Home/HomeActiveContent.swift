@@ -34,7 +34,6 @@ struct HomeActiveRing: View {
                     trackColor: ICareColors.separator,
                     fillColor: ICareColors.brand
                 )
-                .animation(.linear(duration: 1), value: progress)
 
                 VStack(spacing: ICareSpacing.sm) {
                     Text(statusLabel)
@@ -46,8 +45,6 @@ struct HomeActiveRing: View {
                         .font(.system(size: 52, weight: .light, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(ICareColors.textPrimary)
-                        .contentTransition(.numericText())
-                        .animation(ICareAnimation.countdown, value: remaining)
 
                     Text(nextBreakLabel(at: context.date))
                         .font(.system(size: 15, weight: .regular))
@@ -88,7 +85,10 @@ struct HomeActiveRing: View {
     // MARK: - Labels
 
     private var statusLabel: String {
-        appState.focusFilterState.overrideActive ? "FOCUS MODE ACTIVE" : "REMINDERS ACTIVE"
+        if appState.isAwaitingBreakStart {
+            return "BREAK DUE"
+        }
+        return appState.focusFilterState.overrideActive ? "FOCUS MODE ACTIVE" : "REMINDERS ACTIVE"
     }
 
     private var resumesLabel: String {
@@ -112,7 +112,7 @@ struct HomeActiveRing: View {
 
     private func nextBreakLabel(at date: Date) -> String {
         guard let next = appState.runtimeState.nextReminderAt else { return "Scheduling..." }
-        if next.timeIntervalSince(date) <= 0 { return "Break time" }
+        if next.timeIntervalSince(date) <= 0 { return "Waiting for your input" }
         let formatter = DateFormatter()
         formatter.dateFormat = "H:mm"
         return "Next break at \(formatter.string(from: next))"
@@ -148,7 +148,22 @@ struct HomeActiveButtons: View {
 
     var body: some View {
         VStack(spacing: ICareSpacing.base) {
-            if !isOutsideActiveHours {
+            if appState.isAwaitingBreakStart {
+                Button(action: { onStartBreak?() }) {
+                    HStack(spacing: ICareSpacing.sm) {
+                        Image(systemName: "eye")
+                            .font(.system(size: 14, weight: .medium))
+                        Text("Start Break")
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(ICareColors.brand)
+                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
+                }
+                .buttonStyle(.plain)
+            } else if !isOutsideActiveHours {
                 Button(action: { onStartBreak?() }) {
                     HStack(spacing: ICareSpacing.sm) {
                         Image(systemName: "eye")
@@ -168,11 +183,17 @@ struct HomeActiveButtons: View {
 
             HStack(spacing: ICareSpacing.sm) {
                 if !isOutsideActiveHours {
-                    Button(action: { appState.resetTimer() }) {
+                    Button(action: {
+                        if appState.isAwaitingBreakStart {
+                            appState.dismissReminder()
+                        } else {
+                            appState.resetTimer()
+                        }
+                    }) {
                         HStack(spacing: ICareSpacing.xs) {
-                            Image(systemName: "arrow.counterclockwise")
+                            Image(systemName: appState.isAwaitingBreakStart ? "xmark" : "arrow.counterclockwise")
                                 .font(.system(size: 13, weight: .medium))
-                            Text("Reset")
+                            Text(appState.isAwaitingBreakStart ? "Dismiss" : "Reset")
                         }
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(ICareColors.textSecondary)

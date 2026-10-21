@@ -2,7 +2,6 @@ import SwiftUI
 
 struct WatchNotificationView: View {
     @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
     @State private var showCountdown = false
 
     var body: some View {
@@ -42,10 +41,6 @@ struct WatchNotificationView: View {
                         }
                         .buttonStyle(.plain)
 
-                        SecondaryButton(title: "Skip") {
-                            appState.skipReminder(device: .watch)
-                            dismiss()
-                        }
                     }
                     .padding(.horizontal, ICareSpacing.md)
                     .padding(.vertical, ICareSpacing.sm)

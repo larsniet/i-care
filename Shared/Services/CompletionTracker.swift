@@ -26,6 +26,8 @@ enum CompletionTracker {
     // MARK: - Break Records
 
     static func recordBreak(
+        id: String,
+        startedAt: Date,
         type: BreakCompletionType,
         device: DeviceType,
         into summary: inout DailySummary
@@ -35,23 +37,14 @@ enum CompletionTracker {
         }
 
         let record = BreakRecord(
+            id: id,
+            startedAt: startedAt,
             completedAt: Date(),
             sourceDevice: device,
             completionType: type
         )
-
-        switch type {
-        case .completed:
-            summary.completedBreakCount += 1
-            summary.lastCompletedBreakAt = Date()
-        case .skipped:
-            summary.skippedBreakCount += 1
-        case .cancelled:
-            break
-        }
-
+        summary = upsertRecord(record)
         save(summary)
-        appendRecord(record)
     }
 
     static func loadTodayRecords() -> [BreakRecord] {
@@ -59,17 +52,48 @@ enum CompletionTracker {
         return loadRecords().filter { calendar.isDateInToday($0.completedAt) }
     }
 
+    static func mergeTodayRecords(_ incoming: [BreakRecord]) -> DailySummary {
+        let calendar = Calendar.current
+        let existing = loadRecords()
+        let historical = existing.filter { !calendar.isDateInToday($0.completedAt) }
+
+        var mergedByID = Dictionary(uniqueKeysWithValues: loadTodayRecords().map { ($0.id, $0) })
+        for record in incoming where calendar.isDateInToday(record.completedAt) {
+            mergedByID[record.id] = record
+        }
+
+        let mergedToday = mergedByID.values.sorted { $0.completedAt < $1.completedAt }
+        var combined = (historical + mergedToday).sorted { $0.completedAt < $1.completedAt }
+        if combined.count > maxRecords {
+            combined = Array(combined.suffix(maxRecords))
+        }
+
+        if let data = try? JSONEncoder().encode(combined) {
+            defaults.set(data, forKey: recordsKey)
+        }
+
+        let summary = makeSummary(from: mergedToday)
+        save(summary)
+        return summary
+    }
+
     // MARK: - Private
 
-    private static func appendRecord(_ record: BreakRecord) {
+    private static func upsertRecord(_ record: BreakRecord) -> DailySummary {
         var records = loadRecords()
-        records.append(record)
+        if let existingIndex = records.firstIndex(where: { $0.id == record.id }) {
+            records[existingIndex] = record
+        } else {
+            records.append(record)
+        }
         if records.count > maxRecords {
             records = Array(records.suffix(maxRecords))
         }
         if let data = try? JSONEncoder().encode(records) {
             defaults.set(data, forKey: recordsKey)
         }
+        let todayRecords = records.filter { Calendar.current.isDateInToday($0.completedAt) }
+        return makeSummary(from: todayRecords)
     }
 
     private static func loadRecords() -> [BreakRecord] {
@@ -77,5 +101,25 @@ enum CompletionTracker {
               let records = try? JSONDecoder().decode([BreakRecord].self, from: data)
         else { return [] }
         return records
+    }
+
+    private static func makeSummary(from records: [BreakRecord]) -> DailySummary {
+        var summary = DailySummary()
+        for record in records {
+            switch record.completionType {
+            case .completed:
+                summary.completedBreakCount += 1
+                if let last = summary.lastCompletedBreakAt {
+                    summary.lastCompletedBreakAt = max(last, record.completedAt)
+                } else {
+                    summary.lastCompletedBreakAt = record.completedAt
+                }
+            case .skipped:
+                summary.skippedBreakCount += 1
+            case .cancelled:
+                break
+            }
+        }
+        return summary
     }
 }

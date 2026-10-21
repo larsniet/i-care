@@ -14,7 +14,7 @@ struct WatchHomeView: View {
                         .environmentObject(appState)
                         .transition(.opacity)
                         .zIndex(1)
-                } else if !appState.hasCompletedOnboarding {
+                } else if appState.shouldShowSetupPrompt {
                     setupNeededContent
                 } else if appState.currentStatus == .blocked {
                     blockedContent
@@ -30,17 +30,6 @@ struct WatchHomeView: View {
                 appState.pendingAction = nil
                 if action == .startBreak {
                     showCountdown = true
-                }
-            }
-            .onChange(of: appState.breakStartedAt) { _, newValue in
-                if let started = newValue, !showCountdown {
-                    let elapsed = Date().timeIntervalSince(started)
-                    let duration = Double(appState.settings.breakDurationSeconds)
-                    if elapsed < duration {
-                        showCountdown = true
-                    } else {
-                        appState.breakStartedAt = nil
-                    }
                 }
             }
         }
@@ -81,7 +70,14 @@ struct WatchHomeView: View {
     }
 
     private var hasBottomButtons: Bool {
-        appState.currentStatus == .active && !isOutsideActiveHours
+        switch appState.currentStatus {
+        case .active:
+            return !isOutsideActiveHours
+        case .paused:
+            return true
+        default:
+            return false
+        }
     }
 
     private var mainDashboard: some View {
@@ -111,12 +107,73 @@ struct WatchHomeView: View {
     }
 
     private var bottomButtons: some View {
+        Group {
+            switch appState.currentStatus {
+            case .active:
+                activeButtons
+            case .paused:
+                pausedButtons
+            default:
+                EmptyView()
+            }
+        }
+    }
+
+    private var activeButtons: some View {
+        Group {
+            if appState.isAwaitingBreakStart {
+                dueButtons
+            } else {
+                HStack(spacing: ICareSpacing.sm) {
+                    Button {
+                        appState.resetTimer()
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(ICareColors.textSecondary)
+                            .frame(width: 32, height: 32)
+                            .background(ICareColors.separator.opacity(0.6))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        appState.startBreak()
+                        showCountdown = true
+                    } label: {
+                        Text("Start")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, ICareSpacing.base)
+                            .padding(.vertical, 6)
+                            .background(ICareColors.brand)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        appState.pause()
+                    } label: {
+                        Image(systemName: "pause.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(ICareColors.textSecondary)
+                            .frame(width: 32, height: 32)
+                            .background(ICareColors.separator.opacity(0.6))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var dueButtons: some View {
         HStack(spacing: ICareSpacing.sm) {
             Button {
-                appState.resetTimer()
+                appState.dismissReminder(device: .watch)
             } label: {
-                Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 12, weight: .medium))
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(ICareColors.textSecondary)
                     .frame(width: 32, height: 32)
                     .background(ICareColors.separator.opacity(0.6))
@@ -137,16 +194,34 @@ struct WatchHomeView: View {
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
+        }
+    }
 
+    private var pausedButtons: some View {
+        HStack(spacing: ICareSpacing.sm) {
             Button {
-                appState.pause()
+                appState.startBreak()
+                showCountdown = true
             } label: {
-                Image(systemName: "pause.fill")
-                    .font(.system(size: 11))
+                Image(systemName: "eye")
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(ICareColors.textSecondary)
                     .frame(width: 32, height: 32)
                     .background(ICareColors.separator.opacity(0.6))
                     .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                appState.resume()
+            } label: {
+                Text("Resume")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, ICareSpacing.base)
+                    .padding(.vertical, 6)
+                    .background(ICareColors.brand)
+                    .clipShape(Capsule())
             }
             .buttonStyle(.plain)
         }
@@ -178,14 +253,11 @@ struct WatchHomeView: View {
                     progress: progress,
                     size: 120
                 )
-                .animation(.linear(duration: 1), value: progress)
 
                 Text(countdownString(seconds: remaining))
                     .font(.system(size: 34, weight: .light, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(ICareColors.textPrimary)
-                    .contentTransition(.numericText())
-                    .animation(ICareAnimation.countdown, value: remaining)
             }
         }
     }
@@ -221,33 +293,28 @@ struct WatchHomeView: View {
     // MARK: - Paused
 
     private var pausedRing: some View {
-        Button {
-            appState.resume()
-        } label: {
-            ZStack {
-                ProgressRing(
-                    progress: 0,
-                    size: 120,
-                    trackWidth: 4,
-                    fillWidth: 4,
-                    trackColor: ICareColors.separator,
-                    fillColor: ICareColors.statusPaused
-                )
-                .opacity(0.4)
+        ZStack {
+            ProgressRing(
+                progress: 0,
+                size: 120,
+                trackWidth: 4,
+                fillWidth: 4,
+                trackColor: ICareColors.separator,
+                fillColor: ICareColors.statusPaused
+            )
+            .opacity(0.4)
 
-                VStack(spacing: 6) {
-                    Image(systemName: "play.circle.fill")
-                        .font(.system(size: 32, weight: .light))
-                        .foregroundStyle(ICareColors.brand)
+            VStack(spacing: 6) {
+                Image(systemName: "pause.circle.fill")
+                    .font(.system(size: 32, weight: .light))
+                    .foregroundStyle(ICareColors.statusPaused)
 
-                    Text("PAUSED")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(ICareColors.statusPaused)
-                        .tracking(1.2)
-                }
+                Text("PAUSED")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(ICareColors.statusPaused)
+                    .tracking(1.2)
             }
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Blocked
@@ -325,7 +392,7 @@ struct WatchHomeView: View {
 
     private func nextBreakTimeLabel(at date: Date) -> String {
         guard let next = appState.runtimeState.nextReminderAt else { return "" }
-        if next.timeIntervalSince(date) <= 0 { return "now" }
+        if next.timeIntervalSince(date) <= 0 { return "Break due" }
         let formatter = DateFormatter()
         formatter.dateFormat = "H:mm"
         return "at \(formatter.string(from: next))"

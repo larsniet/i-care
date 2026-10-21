@@ -4,8 +4,10 @@ import UIKit
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.openURL) private var openURL
+    @State private var selectedIntervalMinutes = 20
+    @State private var selectedBreakDurationSeconds = 20
 
-    private let intervalOptions = [15, 20, 30, 45]
+    private let intervalOptions = [1, 15, 20, 30, 45]
     private let breakDurationOptions = [10, 20, 30]
 
     var body: some View {
@@ -23,6 +25,28 @@ struct SettingsView: View {
                 .padding(.horizontal, ICareSpacing.lg)
                 .padding(.top, ICareSpacing.base)
                 .padding(.bottom, ICareSpacing.xl)
+            }
+        }
+        .onAppear { syncLocalSelectionsFromSettings() }
+        .onChange(of: appState.settings) { _, _ in
+            syncLocalSelectionsFromSettings()
+        }
+        .onChange(of: selectedIntervalMinutes) { _, newValue in
+            guard newValue != appState.settings.reminderIntervalMinutes else { return }
+            Task { @MainActor in
+                await Task.yield()
+                var s = appState.settings
+                s.reminderIntervalMinutes = newValue
+                appState.settings = s
+            }
+        }
+        .onChange(of: selectedBreakDurationSeconds) { _, newValue in
+            guard newValue != appState.settings.breakDurationSeconds else { return }
+            Task { @MainActor in
+                await Task.yield()
+                var s = appState.settings
+                s.breakDurationSeconds = newValue
+                appState.settings = s
             }
         }
     }
@@ -260,23 +284,15 @@ struct SettingsView: View {
 
     private var intervalMinutesBinding: Binding<Int> {
         Binding(
-            get: { appState.settings.reminderIntervalMinutes },
-            set: { newValue in
-                var s = appState.settings
-                s.reminderIntervalMinutes = newValue
-                appState.settings = s
-            }
+            get: { selectedIntervalMinutes },
+            set: { selectedIntervalMinutes = $0 }
         )
     }
 
     private var breakDurationSecondsBinding: Binding<Int> {
         Binding(
-            get: { appState.settings.breakDurationSeconds },
-            set: { newValue in
-                var s = appState.settings
-                s.breakDurationSeconds = newValue
-                appState.settings = s
-            }
+            get: { selectedBreakDurationSeconds },
+            set: { selectedBreakDurationSeconds = $0 }
         )
     }
 
@@ -385,6 +401,15 @@ struct SettingsView: View {
         components.hour = hour
         components.minute = minute
         return Calendar.current.date(from: components) ?? Date()
+    }
+
+    private func syncLocalSelectionsFromSettings() {
+        if selectedIntervalMinutes != appState.settings.reminderIntervalMinutes {
+            selectedIntervalMinutes = appState.settings.reminderIntervalMinutes
+        }
+        if selectedBreakDurationSeconds != appState.settings.breakDurationSeconds {
+            selectedBreakDurationSeconds = appState.settings.breakDurationSeconds
+        }
     }
 
     // MARK: - Status Helpers

@@ -1,5 +1,8 @@
 import Combine
 import Foundation
+#if os(watchOS)
+import WatchKit
+#endif
 
 // MARK: - Supporting Types
 
@@ -20,13 +23,15 @@ enum ReminderStatus: Sendable, Equatable {
 enum NotificationAction: Sendable {
     case startBreak
     case snooze
-    case skip
+    case dismiss
 }
 
 // MARK: - App State
 
 @MainActor
 final class AppState: ObservableObject {
+
+    static private(set) var current: AppState?
 
     @Published var settings: ReminderSettings {
         didSet {
@@ -62,6 +67,7 @@ final class AppState: ObservableObject {
     private var isApplyingState = false
     private var hasCheckedNotificationStatus = false
     private var syncVersion: Int
+    private var pendingSettingsCommitTask: Task<Void, Never>?
 
     // MARK: - Computed
 
@@ -94,6 +100,18 @@ final class AppState: ObservableObject {
         return .active
     }
 
+    var isAwaitingBreakStart: Bool {
+        guard currentStatus == .active else { return false }
+        guard breakStartedAt == nil, let next = runtimeState.nextReminderAt else { return false }
+        return next.timeIntervalSinceNow <= 0
+    }
+
+    var shouldShowSetupPrompt: Bool {
+        !hasCompletedOnboarding
+            && syncVersion == 0
+            && syncManager.acceptedState == nil
+    }
+
     private var currentOrigin: SyncOrigin {
         #if os(iOS)
         return .phone
@@ -119,8 +137,18 @@ final class AppState: ObservableObject {
 
         coordinator.registerCategories()
         bindNotificationActions(coordinator)
+        drainPendingNotificationActions()
         bindSyncManager()
+
+        if let persisted = SettingsStore.loadSyncState() {
+            var restored = persisted
+            recomputeDerivedFields(&restored)
+            syncManager.bootstrapAcceptedState(restored)
+            applyStateLocally(restored, isRemote: false)
+        }
+
         syncManager.activate()
+        Self.current = self
 
         Task { [weak self] in
             guard let self else { return }
@@ -141,22 +169,46 @@ final class AppState: ObservableObject {
     }
 
     func endBreak(type: BreakCompletionType, device: DeviceType = .iphone) {
-        guard breakStartedAt != nil else { return }
-        recordBreak(type: type, device: device)
+        guard let startedAt = breakStartedAt else { return }
+        let breakEndedAt = startedAt.addingTimeInterval(Double(settings.breakDurationSeconds))
+        recordBreak(
+            type: type,
+            device: device,
+            recordID: historyRecordID(scope: "break", anchor: startedAt),
+            startedAt: startedAt
+        )
         commitAndPublish { state in
             state.phase = .work
             state.phaseStartedAt = nil
             state.phaseEndsAt = nil
+            if type == .completed {
+                let effective = self.settingsWithFocusOverrides()
+                state.nextReminderAt = ReminderEngine.upcomingReminderDates(
+                    after: breakEndedAt,
+                    settings: effective,
+                    limit: 1
+                ).first
+            } else {
+                state.nextReminderAt = nil
+            }
             self.recomputeDerivedFields(&state)
         }
     }
 
-    func skipReminder(device: DeviceType = .iphone) {
-        recordBreak(type: .skipped, device: device)
+    func dismissReminder(device: DeviceType = .iphone) {
+        let startedAt = breakStartedAt ?? runtimeState.nextReminderAt ?? Date()
+        let scope = breakStartedAt != nil ? "break" : "reminder"
+        recordBreak(
+            type: .skipped,
+            device: device,
+            recordID: historyRecordID(scope: scope, anchor: startedAt),
+            startedAt: startedAt
+        )
         commitAndPublish { state in
             state.phase = .work
             state.phaseStartedAt = nil
             state.phaseEndsAt = nil
+            state.nextReminderAt = nil
             self.recomputeDerivedFields(&state)
         }
     }
@@ -181,12 +233,14 @@ final class AppState: ObservableObject {
         runtimeState.pausedUntil = nil
         commitAndPublish { state in
             state.isPaused = false
+            state.nextReminderAt = nil
             self.recomputeDerivedFields(&state)
         }
     }
 
     func resetTimer() {
         commitAndPublish { state in
+            state.nextReminderAt = nil
             self.recomputeDerivedFields(&state)
         }
     }
@@ -228,6 +282,8 @@ final class AppState: ObservableObject {
     // MARK: - Pipeline: Commit
 
     private func commitAndPublish(_ mutate: (inout SyncState) -> Void) {
+        pendingSettingsCommitTask?.cancel()
+        pendingSettingsCommitTask = nil
         var next = buildCurrentSyncState()
         let lastAccepted = syncManager.acceptedState?.version ?? 0
         next.version = max(next.version, lastAccepted) + 1
@@ -248,6 +304,7 @@ final class AppState: ObservableObject {
 
         syncVersion = state.version
         SettingsStore.saveSyncVersion(syncVersion)
+        SettingsStore.save(state)
 
         if state.settings != settings {
             settings = state.settings
@@ -256,19 +313,23 @@ final class AppState: ObservableObject {
         if state.onboarded != hasCompletedOnboarding {
             hasCompletedOnboarding = state.onboarded
         }
-        let authStatus: NotificationAuthorizationStatus = state.notificationsAuthorized ? .authorized : .denied
-        if authStatus != notificationAuthorizationStatus {
-            notificationAuthorizationStatus = authStatus
-            hasCheckedNotificationStatus = true
-        }
         if state.isPaused != runtimeState.isPaused {
             runtimeState.isPaused = state.isPaused
         }
         if state.nextReminderAt != runtimeState.nextReminderAt {
             runtimeState.nextReminderAt = state.nextReminderAt
         }
+        if let remoteTodayRecords = state.todayRecords {
+            let mergedSummary = CompletionTracker.mergeTodayRecords(remoteTodayRecords)
+            if mergedSummary != todaySummary {
+                todaySummary = mergedSummary
+            }
+        }
 
         let effectiveSettings = settingsWithFocusOverrides()
+        let canScheduleLocally = effectiveSettings.remindersEnabled
+            && !runtimeState.isPaused
+            && notificationAuthorizationStatus == .authorized
 
         switch state.phase {
         case .break:
@@ -283,16 +344,35 @@ final class AppState: ObservableObject {
                             at: endsAt, soundEnabled: state.settings.soundEnabled
                         )
                     }
-                    if isRemote { pendingAction = .startBreak }
+                    if isRemote {
+                        pendingAction = .startBreak
+                    }
                 } else {
+                    if runtimeState.lastReminderHandledAt == nil
+                        || runtimeState.lastReminderHandledAt! < started {
+                        let device: DeviceType = state.origin == .watch ? .watch : .iphone
+                        recordBreak(
+                            type: .completed,
+                            device: device,
+                            recordID: historyRecordID(scope: "break", anchor: started),
+                            startedAt: started
+                        )
+                    }
                     breakStartedAt = nil
                     notificationCoordinator.cancelBreakComplete()
                 }
+            } else {
+                breakStartedAt = nil
+                notificationCoordinator.cancelBreakComplete()
             }
+        case .awaitingBreak:
+            breakStartedAt = nil
+            notificationCoordinator.cancelBreakComplete()
+            notificationCoordinator.cancelPendingReminders()
         case .work:
             breakStartedAt = nil
             notificationCoordinator.cancelBreakComplete()
-            if let next = state.nextReminderAt, next.timeIntervalSinceNow > 0 {
+            if canScheduleLocally, let next = state.nextReminderAt, next.timeIntervalSinceNow > 0 {
                 var dates = [next]
                 let rest = ReminderEngine.upcomingReminderDates(
                     after: next,
@@ -309,25 +389,34 @@ final class AppState: ObservableObject {
             notificationCoordinator.cancelBreakComplete()
             notificationCoordinator.cancelPendingReminders()
         }
+
+        #if os(watchOS)
+        if let next = state.nextReminderAt, next.timeIntervalSinceNow > 10 {
+            WatchAppDelegate.scheduleBackgroundRefresh(before: next)
+        }
+        #endif
     }
 
     // MARK: - Pipeline: Derive
 
     private func recomputeDerivedFields(_ state: inout SyncState) {
         let effective = settingsWithFocusOverrides()
-        let operational = effective.remindersEnabled
-            && state.notificationsAuthorized
-            && !state.isPaused
+        let operational = effective.remindersEnabled && !state.isPaused
 
         guard state.phase != .break else { return }
 
         if operational {
-            state.phase = .work
-            state.nextReminderAt = ReminderEngine.upcomingReminderDates(
-                after: Date(), settings: effective
-            ).first
+            if state.nextReminderAt == nil {
+                state.nextReminderAt = ReminderEngine.upcomingReminderDates(
+                    after: Date(), settings: effective
+                ).first
+            }
             if state.nextReminderAt == nil {
                 state.phase = .idle
+            } else if let nextReminderAt = state.nextReminderAt, nextReminderAt.timeIntervalSinceNow <= 0 {
+                state.phase = .awaitingBreak
+            } else {
+                state.phase = .work
             }
         } else {
             state.phase = .idle
@@ -336,9 +425,21 @@ final class AppState: ObservableObject {
     }
 
     private func buildCurrentSyncState() -> SyncState {
-        SyncState(
+        let syncOperational = effectiveRemindersEnabled && !runtimeState.isPaused
+        let phase: SyncPhase
+        if breakStartedAt != nil {
+            phase = .break
+        } else if syncOperational, let nextReminderAt = runtimeState.nextReminderAt,
+                  nextReminderAt.timeIntervalSinceNow <= 0 {
+            phase = .awaitingBreak
+        } else if syncOperational {
+            phase = .work
+        } else {
+            phase = .idle
+        }
+        return SyncState(
             version: syncVersion,
-            phase: breakStartedAt != nil ? .break : (isFullyOperational ? .work : .idle),
+            phase: phase,
             phaseStartedAt: breakStartedAt,
             phaseEndsAt: breakStartedAt.map {
                 $0.addingTimeInterval(Double(settings.breakDurationSeconds))
@@ -348,6 +449,7 @@ final class AppState: ObservableObject {
             onboarded: hasCompletedOnboarding,
             notificationsAuthorized: notificationAuthorizationStatus == .authorized,
             nextReminderAt: runtimeState.nextReminderAt,
+            todayRecords: CompletionTracker.loadTodayRecords(),
             updatedAt: Date(),
             origin: currentOrigin
         )
@@ -357,10 +459,10 @@ final class AppState: ObservableObject {
 
     private func bindSyncManager() {
         syncManager.onSessionActivated = { [weak self] in
-            self?.commitAndPublish { _ in }
+            self?.publishCurrentState()
         }
         syncManager.onSyncRequested = { [weak self] in
-            self?.commitAndPublish { _ in }
+            self?.publishCurrentState()
         }
         syncManager.onStateReceived = { [weak self] state in
             self?.applyStateLocally(state, isRemote: true)
@@ -374,31 +476,87 @@ final class AppState: ObservableObject {
             self?.startBreak()
             self?.pendingAction = .startBreak
         }
-        coordinator.onSkip = { [weak self] in
-            self?.skipReminder()
+        coordinator.onDismiss = { [weak self] in
+            self?.dismissReminder()
         }
     }
 
     // MARK: - Private
 
-    private func recordBreak(type: BreakCompletionType, device: DeviceType) {
-        CompletionTracker.recordBreak(type: type, device: device, into: &todaySummary)
+    private func recordBreak(
+        type: BreakCompletionType,
+        device: DeviceType,
+        recordID: String,
+        startedAt: Date
+    ) {
+        CompletionTracker.recordBreak(
+            id: recordID,
+            startedAt: startedAt,
+            type: type,
+            device: device,
+            into: &todaySummary
+        )
         runtimeState.lastReminderHandledAt = Date()
         if type == .completed {
             runtimeState.lastReminderFiredAt = Date()
         }
     }
 
+    private func historyRecordID(scope: String, anchor: Date) -> String {
+        let milliseconds = Int(anchor.timeIntervalSince1970 * 1000)
+        return "\(scope):\(milliseconds)"
+    }
+
     private func onSettingsChanged() {
         SettingsStore.save(settings)
-        commitAndPublish { state in
-            self.recomputeDerivedFields(&state)
+        pendingSettingsCommitTask?.cancel()
+        pendingSettingsCommitTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled, let self else { return }
+            self.pendingSettingsCommitTask = nil
+            self.commitAndPublish { state in
+                state.nextReminderAt = nil
+                self.recomputeDerivedFields(&state)
+            }
         }
     }
 
     private func onFocusFilterChanged() {
+        SettingsStore.save(focusFilterState)
         commitAndPublish { state in
+            state.nextReminderAt = nil
             self.recomputeDerivedFields(&state)
+        }
+    }
+
+    private func publishCurrentState() {
+        var current = buildCurrentSyncState()
+        recomputeDerivedFields(&current)
+        current.updatedAt = Date()
+        current.origin = currentOrigin
+        applyStateLocally(current, isRemote: false)
+        syncManager.publishState(current)
+    }
+
+    private func drainPendingNotificationActions() {
+        let defaults = UserDefaults.standard
+        let pendingDismiss = defaults.bool(
+            forKey: NotificationCoordinator.pendingDismissActionKey
+        )
+        let pendingStart = defaults.bool(
+            forKey: NotificationCoordinator.pendingStartActionKey
+        )
+
+        guard pendingDismiss || pendingStart else { return }
+
+        defaults.removeObject(forKey: NotificationCoordinator.pendingDismissActionKey)
+        defaults.removeObject(forKey: NotificationCoordinator.pendingStartActionKey)
+
+        if pendingDismiss {
+            dismissReminder()
+        } else if pendingStart {
+            startBreak()
+            pendingAction = .startBreak
         }
     }
 

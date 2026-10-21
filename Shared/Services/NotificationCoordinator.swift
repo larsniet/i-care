@@ -10,7 +10,7 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     static let breakCompleteID = "icare.break.complete"
 
     var onStartBreak: (@MainActor () -> Void)?
-    var onSkip: (@MainActor () -> Void)?
+    var onDismiss: (@MainActor () -> Void)?
 
     private let center = UNUserNotificationCenter.current()
 
@@ -21,12 +21,27 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
 
     // MARK: - Setup
 
+    static let startActionID = "START_BREAK"
+    static let dismissActionID = "DISMISS_BREAK"
+    static let pendingStartActionKey = "icare.pendingNotificationStartBreak"
+    static let pendingDismissActionKey = "icare.pendingNotificationDismissReminder"
+
     func registerCategories() {
+        let startAction = UNNotificationAction(
+            identifier: Self.startActionID,
+            title: "Start",
+            options: [.foreground]
+        )
+        let dismissAction = UNNotificationAction(
+            identifier: Self.dismissActionID,
+            title: "Dismiss",
+            options: [.destructive]
+        )
         let category = UNNotificationCategory(
             identifier: Self.categoryIdentifier,
-            actions: [],
+            actions: [startAction, dismissAction],
             intentIdentifiers: [],
-            options: .customDismissAction
+            options: []
         )
         center.setNotificationCategories([category])
     }
@@ -97,6 +112,7 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
 
     func cancelBreakComplete() {
         center.removePendingNotificationRequests(withIdentifiers: [Self.breakCompleteID])
+        center.removeDeliveredNotifications(withIdentifiers: [Self.breakCompleteID])
     }
 
     // MARK: - UNUserNotificationCenterDelegate
@@ -111,10 +127,6 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     ) {
         let id = notification.request.identifier
         if id == Self.breakCompleteID && isShowingCountdown {
-            handler([])
-            return
-        }
-        if id.hasPrefix(Self.reminderIDPrefix) && isAppInForeground {
             handler([])
             return
         }
@@ -136,10 +148,18 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
 
         Task { @MainActor in
             switch action {
-            case UNNotificationDefaultActionIdentifier:
-                onStartBreak?()
-            case UNNotificationDismissActionIdentifier:
-                onSkip?()
+            case Self.startActionID, UNNotificationDefaultActionIdentifier:
+                if let onStartBreak {
+                    onStartBreak()
+                } else {
+                    UserDefaults.standard.set(true, forKey: Self.pendingStartActionKey)
+                }
+            case Self.dismissActionID, UNNotificationDismissActionIdentifier:
+                if action == Self.dismissActionID, let onDismiss {
+                    onDismiss()
+                } else if action == Self.dismissActionID {
+                    UserDefaults.standard.set(true, forKey: Self.pendingDismissActionKey)
+                }
             default:
                 break
             }

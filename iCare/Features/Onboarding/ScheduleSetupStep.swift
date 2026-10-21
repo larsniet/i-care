@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ScheduleSetupStep: View {
     @EnvironmentObject private var appState: AppState
+    @State private var selectedIntervalMinutes = 20
+    @State private var selectedBreakDurationSeconds = 20
 
     private var activeHoursEnabled: Binding<Bool> {
         Binding(
@@ -10,7 +12,7 @@ struct ScheduleSetupStep: View {
         )
     }
 
-    private let intervalOptions = [15, 20, 30, 45]
+    private let intervalOptions = [1, 15, 20, 30, 45]
     private let breakOptions = [10, 20, 30]
 
     var body: some View {
@@ -113,6 +115,24 @@ struct ScheduleSetupStep: View {
             .padding(.horizontal, ICareSpacing.lg)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .onAppear { syncLocalSelectionsFromSettings() }
+        .onChange(of: appState.settings) { _, _ in
+            syncLocalSelectionsFromSettings()
+        }
+        .onChange(of: selectedIntervalMinutes) { _, newValue in
+            guard newValue != appState.settings.reminderIntervalMinutes else { return }
+            Task { @MainActor in
+                await Task.yield()
+                appState.settings.reminderIntervalMinutes = newValue
+            }
+        }
+        .onChange(of: selectedBreakDurationSeconds) { _, newValue in
+            guard newValue != appState.settings.breakDurationSeconds else { return }
+            Task { @MainActor in
+                await Task.yield()
+                appState.settings.breakDurationSeconds = newValue
+            }
+        }
     }
 
     // MARK: - Helpers
@@ -163,15 +183,15 @@ struct ScheduleSetupStep: View {
 
     private var intervalBinding: Binding<Int> {
         Binding(
-            get: { appState.settings.reminderIntervalMinutes },
-            set: { appState.settings.reminderIntervalMinutes = $0 }
+            get: { selectedIntervalMinutes },
+            set: { selectedIntervalMinutes = $0 }
         )
     }
 
     private var breakBinding: Binding<Int> {
         Binding(
-            get: { appState.settings.breakDurationSeconds },
-            set: { appState.settings.breakDurationSeconds = $0 }
+            get: { selectedBreakDurationSeconds },
+            set: { selectedBreakDurationSeconds = $0 }
         )
     }
 
@@ -233,5 +253,14 @@ struct ScheduleSetupStep: View {
         components.hour = hour
         components.minute = minute
         return Calendar.current.date(from: components) ?? Date()
+    }
+
+    private func syncLocalSelectionsFromSettings() {
+        if selectedIntervalMinutes != appState.settings.reminderIntervalMinutes {
+            selectedIntervalMinutes = appState.settings.reminderIntervalMinutes
+        }
+        if selectedBreakDurationSeconds != appState.settings.breakDurationSeconds {
+            selectedBreakDurationSeconds = appState.settings.breakDurationSeconds
+        }
     }
 }
