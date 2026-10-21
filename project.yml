@@ -7,6 +7,11 @@ options:
   xcodeVersion: "26.3"
   generateEmptyDirectories: false
 
+packages:
+  Communicator:
+    url: https://github.com/KaneCheshire/Communicator
+    from: 4.1.1
+
 settings:
   base:
     MARKETING_VERSION: "1.0.0"
@@ -35,10 +40,11 @@ targets:
         CODE_SIGN_ENTITLEMENTS: iCare/iCare.entitlements
         PRODUCT_NAME: iCare
         GENERATE_INFOPLIST_FILE: false
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: "NO"
     dependencies:
       - target: iCareWatch
+      - package: Communicator
 
   iCareWatch:
     type: application
@@ -59,3 +65,5 @@ targets:
         GENERATE_INFOPLIST_FILE: false
         SDKROOT: watchos
         TARGETED_DEVICE_FAMILY: "4"
+    dependencies:
+      - package: Communicator
