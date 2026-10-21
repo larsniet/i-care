@@ -32,16 +32,11 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
             title: "Start",
             options: [.foreground]
         )
-        // watchOS adds its own Dismiss button (which only closes the notification),
-        // so ours gets a distinct name there instead of showing "Dismiss" twice.
-        #if os(watchOS)
-        let dismissTitle = "Skip break"
-        #else
-        let dismissTitle = "Dismiss"
-        #endif
+        // Not "Dismiss": watchOS adds its own Dismiss (which only closes the
+        // notification), and reminders forwarded from the iPhone use these titles.
         let dismissAction = UNNotificationAction(
             identifier: Self.dismissActionID,
-            title: dismissTitle,
+            title: "Skip break",
             options: [.destructive]
         )
         let category = UNNotificationCategory(
