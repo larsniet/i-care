@@ -31,4 +31,8 @@ enum ICareColors {
     static let statusPaused = Color(red: 212 / 255, green: 160 / 255, blue: 83 / 255)
     static let statusBlocked = adaptive(light: (196, 92, 86), dark: (232, 134, 127))
     static let separator = adaptive(light: (232, 232, 230), dark: (56, 56, 58))
+    /// Text and icons on a `brand` background. White fails contrast on the light dark-mode mint.
+    static let onBrand = adaptive(light: (255, 255, 255), dark: (8, 46, 38))
+    /// Unfilled part of the progress rings; `separator` vanished against dark surfaces.
+    static let ringTrack = adaptive(light: (232, 232, 230), dark: (76, 76, 80))
 }

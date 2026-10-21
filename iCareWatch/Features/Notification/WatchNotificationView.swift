@@ -33,7 +33,7 @@ struct WatchNotificationView: View {
                         } label: {
                             Text("Start")
                                 .font(ICareTypography.headline)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(ICareColors.onBrand)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, ICareSpacing.md)
                                 .background(ICareColors.brand)

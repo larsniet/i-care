@@ -11,6 +11,10 @@ enum NotificationAuthorizationStatus: String, Codable, Sendable {
     case denied
     case notDetermined
     case provisional
+
+    var allowsReminders: Bool {
+        self == .authorized || self == .provisional
+    }
 }
 
 enum ReminderStatus: Sendable, Equatable {
@@ -55,6 +59,9 @@ final class AppState: ObservableObject {
     }
     @Published var pendingAction: NotificationAction?
     @Published var breakStartedAt: Date?
+    /// iPhone's notification permission as last synced. The Watch shows its blocked
+    /// state from this, since the Watch app never asks for permission itself.
+    @Published private(set) var phoneNotificationsAuthorized = false
     @Published var focusFilterState: FocusFilterState {
         didSet {
             guard !isApplyingState else { return }
@@ -68,6 +75,7 @@ final class AppState: ObservableObject {
     private var hasCheckedNotificationStatus = false
     private var syncVersion: Int
     private var pendingSettingsCommitTask: Task<Void, Never>?
+    private var breakDevice: DeviceType?
 
     // MARK: - Computed
 
@@ -87,16 +95,25 @@ final class AppState: ObservableObject {
 
     var isFullyOperational: Bool {
         effectiveRemindersEnabled
-            && notificationAuthorizationStatus == .authorized
+            && notificationAuthorizationStatus.allowsReminders
             && !runtimeState.isPaused
+    }
+
+    /// True when a Focus filter, not the user's own setting, is keeping reminders off.
+    var isTurnedOffByFocus: Bool {
+        focusFilterState.overrideActive && !focusFilterState.enableReminders
     }
 
     var currentStatus: ReminderStatus {
         if !effectiveRemindersEnabled { return .inactive }
         if runtimeState.isPaused { return .paused }
-        if hasCheckedNotificationStatus && notificationAuthorizationStatus != .authorized {
+        #if os(watchOS)
+        if !phoneNotificationsAuthorized { return .blocked }
+        #else
+        if hasCheckedNotificationStatus && !notificationAuthorizationStatus.allowsReminders {
             return .blocked
         }
+        #endif
         return .active
     }
 
@@ -106,10 +123,9 @@ final class AppState: ObservableObject {
         return next.timeIntervalSinceNow <= 0
     }
 
+    /// The Watch has no onboarding of its own; it only learns it via sync from the iPhone.
     var shouldShowSetupPrompt: Bool {
         !hasCompletedOnboarding
-            && syncVersion == 0
-            && syncManager.acceptedState == nil
     }
 
     private var currentOrigin: SyncOrigin {
@@ -159,23 +175,27 @@ final class AppState: ObservableObject {
     // MARK: - State Transitions
 
     func startBreak() {
+        notificationCoordinator.clearDeliveredReminders()
         commitAndPublish { state in
             let now = Date()
             state.phase = .break
             state.phaseStartedAt = now
             state.phaseEndsAt = now.addingTimeInterval(Double(state.settings.breakDurationSeconds))
             state.nextReminderAt = nil
+            state.breakDevice = .current
         }
     }
 
-    func endBreak(type: BreakCompletionType, device: DeviceType = .iphone) {
+    func endBreak(type: BreakCompletionType, device: DeviceType = .current) {
         guard let startedAt = breakStartedAt else { return }
         let breakEndedAt = startedAt.addingTimeInterval(Double(settings.breakDurationSeconds))
         recordBreak(
             type: type,
             device: device,
             recordID: historyRecordID(scope: "break", anchor: startedAt),
-            startedAt: startedAt
+            startedAt: startedAt,
+            // A break finished in the background is only noticed on the next open.
+            completedAt: type == .completed ? min(Date(), breakEndedAt) : Date()
         )
         commitAndPublish { state in
             state.phase = .work
@@ -195,7 +215,8 @@ final class AppState: ObservableObject {
         }
     }
 
-    func dismissReminder(device: DeviceType = .iphone) {
+    func dismissReminder(device: DeviceType = .current) {
+        notificationCoordinator.clearDeliveredReminders()
         let startedAt = breakStartedAt ?? runtimeState.nextReminderAt ?? Date()
         let scope = breakStartedAt != nil ? "break" : "reminder"
         recordBreak(
@@ -247,12 +268,33 @@ final class AppState: ObservableObject {
 
     // MARK: - Queries / Refresh
 
+    /// Asks for notification permission (used when onboarding skipped it).
+    func requestNotificationPermission() async {
+        _ = await notificationCoordinator.requestAuthorization()
+        await refreshNotificationStatus()
+    }
+
     func refreshNotificationStatus() async {
+        let wasAllowed = hasCheckedNotificationStatus
+            ? notificationAuthorizationStatus.allowsReminders
+            : (syncManager.acceptedState?.notificationsAuthorized ?? false)
         notificationAuthorizationStatus = await notificationCoordinator.currentStatus()
         hasCheckedNotificationStatus = true
-        commitAndPublish { state in
-            self.recomputeDerivedFields(&state)
+        let isAllowed = notificationAuthorizationStatus.allowsReminders
+
+        #if os(iOS)
+        if isAllowed != wasAllowed {
+            commitAndPublish { state in
+                // The countdown kept running while blocked; start fresh once allowed.
+                if isAllowed { state.nextReminderAt = nil }
+                self.recomputeDerivedFields(&state)
+            }
+            return
         }
+        #endif
+        // Nothing the other device needs to know. Publishing here used to bump the
+        // version on every launch, which let a stale Watch overwrite iPhone changes.
+        reapplyLocally()
     }
 
     func refreshFromStore() {
@@ -277,6 +319,21 @@ final class AppState: ObservableObject {
         if loaded != focusFilterState {
             focusFilterState = loaded
         }
+    }
+
+    // MARK: - Pipeline: Reapply
+
+    /// Re-runs local scheduling for the current state without publishing a new version.
+    private func reapplyLocally() {
+        var state = buildCurrentSyncState()
+        let scheduledReminder = state.nextReminderAt
+        recomputeDerivedFields(&state)
+        guard state.nextReminderAt == scheduledReminder else {
+            // A new reminder time is something the other device does need.
+            commitAndPublish { self.recomputeDerivedFields(&$0) }
+            return
+        }
+        applyStateLocally(state, isRemote: false)
     }
 
     // MARK: - Pipeline: Commit
@@ -325,11 +382,21 @@ final class AppState: ObservableObject {
                 todaySummary = mergedSummary
             }
         }
+        if state.notificationsAuthorized != phoneNotificationsAuthorized {
+            phoneNotificationsAuthorized = state.notificationsAuthorized
+        }
+        #if os(watchOS)
+        if let focus = state.focusFilter, focus != focusFilterState {
+            focusFilterState = focus
+            SettingsStore.save(focus)
+        }
+        #endif
+        breakDevice = state.phase == .break ? state.breakDevice : nil
 
         let effectiveSettings = settingsWithFocusOverrides()
         let canScheduleLocally = effectiveSettings.remindersEnabled
             && !runtimeState.isPaused
-            && notificationAuthorizationStatus == .authorized
+            && notificationAuthorizationStatus.allowsReminders
 
         switch state.phase {
         case .break:
@@ -348,14 +415,20 @@ final class AppState: ObservableObject {
                         pendingAction = .startBreak
                     }
                 } else {
-                    if runtimeState.lastReminderHandledAt == nil
+                    let recordID = historyRecordID(scope: "break", anchor: started)
+                    let alreadyRecorded = CompletionTracker.loadTodayRecords().contains { $0.id == recordID }
+                    if !alreadyRecorded,
+                       runtimeState.lastReminderHandledAt == nil
                         || runtimeState.lastReminderHandledAt! < started {
-                        let device: DeviceType = state.origin == .watch ? .watch : .iphone
+                        // Ran out while the app was closed (or force-quit): it still
+                        // counts, timed at the break's end rather than at reopen.
+                        let device = state.breakDevice ?? (state.origin == .watch ? .watch : .iphone)
                         recordBreak(
                             type: .completed,
                             device: device,
-                            recordID: historyRecordID(scope: "break", anchor: started),
-                            startedAt: started
+                            recordID: recordID,
+                            startedAt: started,
+                            completedAt: started.addingTimeInterval(duration)
                         )
                     }
                     breakStartedAt = nil
@@ -447,12 +520,23 @@ final class AppState: ObservableObject {
             isPaused: runtimeState.isPaused,
             settings: settings,
             onboarded: hasCompletedOnboarding,
-            notificationsAuthorized: notificationAuthorizationStatus == .authorized,
+            notificationsAuthorized: notificationsAuthorizedForSync,
             nextReminderAt: runtimeState.nextReminderAt,
             todayRecords: CompletionTracker.loadTodayRecords(),
+            breakDevice: breakStartedAt != nil ? breakDevice : nil,
+            focusFilter: focusFilterState,
             updatedAt: Date(),
             origin: currentOrigin
         )
+    }
+
+    /// The iPhone owns notification permission; the Watch passes along what it last heard.
+    private var notificationsAuthorizedForSync: Bool {
+        #if os(watchOS)
+        return phoneNotificationsAuthorized
+        #else
+        return notificationAuthorizationStatus.allowsReminders
+        #endif
     }
 
     // MARK: - Sync: Wiring
@@ -487,13 +571,15 @@ final class AppState: ObservableObject {
         type: BreakCompletionType,
         device: DeviceType,
         recordID: String,
-        startedAt: Date
+        startedAt: Date,
+        completedAt: Date = Date()
     ) {
         CompletionTracker.recordBreak(
             id: recordID,
             startedAt: startedAt,
             type: type,
             device: device,
+            completedAt: completedAt,
             into: &todaySummary
         )
         runtimeState.lastReminderHandledAt = Date()

@@ -37,9 +37,15 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
             title: "Dismiss",
             options: [.destructive]
         )
+        // watchOS already adds its own Dismiss button, so ours would show up twice.
+        #if os(watchOS)
+        let actions = [startAction]
+        #else
+        let actions = [startAction, dismissAction]
+        #endif
         let category = UNNotificationCategory(
             identifier: Self.categoryIdentifier,
-            actions: [startAction, dismissAction],
+            actions: actions,
             intentIdentifiers: [],
             options: []
         )
@@ -59,8 +65,16 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
 
     // MARK: - Scheduling
 
+    // Every applied sync state reschedules, so skip identical batches instead of
+    // cancelling and re-adding the same notifications over and over.
+    private var lastScheduledBatch: (dates: [Date], soundEnabled: Bool)?
+
     func scheduleReminders(at dates: [Date], settings: ReminderSettings) {
+        if let last = lastScheduledBatch, last.dates == dates, last.soundEnabled == settings.soundEnabled {
+            return
+        }
         cancelPendingReminders()
+        lastScheduledBatch = (dates, settings.soundEnabled)
 
         for (index, date) in dates.enumerated() {
             let content = UNMutableNotificationContent()
@@ -86,9 +100,16 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     }
 
     func cancelPendingReminders() {
-        let ids = (0..<ReminderEngine.maxBatchSize).map { "\(Self.reminderIDPrefix)\($0)" }
-        center.removePendingNotificationRequests(withIdentifiers: ids)
+        lastScheduledBatch = nil
+        center.removePendingNotificationRequests(withIdentifiers: Self.reminderIDs)
     }
+
+    /// Clears reminders already sitting in Notification Center once a break is handled.
+    func clearDeliveredReminders() {
+        center.removeDeliveredNotifications(withIdentifiers: Self.reminderIDs)
+    }
+
+    private static let reminderIDs = (0..<ReminderEngine.maxBatchSize).map { "\(reminderIDPrefix)\($0)" }
 
     // MARK: - Break Complete Notification
 

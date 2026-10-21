@@ -24,14 +24,9 @@ final class WatchSyncManager: @unchecked Sendable {
         ImmediateMessage.observe { [weak self] message in
             switch message.identifier {
             case "stateChanged":
-                let previous = self?.acceptedState
-                let context = Communicator.shared.mostRecentlyReceievedContext
-                self?.applyIncoming(context.content)
-                if self?.acceptedState == previous,
-                   Communicator.shared.currentReachability == .immediatelyReachable {
-                    let request = ImmediateMessage(identifier: "requestSync")
-                    Communicator.shared.send(request)
-                }
+                // The nudge carries the state itself. Reading the context instead could
+                // race the context transfer, and asking for a resync then looped forever.
+                self?.applyIncoming(message.content)
             case "requestSync":
                 Task { @MainActor in self?.onSyncRequested?() }
             default:
@@ -62,7 +57,7 @@ final class WatchSyncManager: @unchecked Sendable {
         try? Communicator.shared.sync(context)
 
         if Communicator.shared.currentReachability == .immediatelyReachable {
-            let nudge = ImmediateMessage(identifier: "stateChanged")
+            let nudge = ImmediateMessage(identifier: "stateChanged", content: ["syncState": data])
             Communicator.shared.send(nudge)
         }
     }

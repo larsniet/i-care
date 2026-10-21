@@ -87,7 +87,7 @@ struct ScheduleSetupStep: View {
                         HStack(spacing: ICareSpacing.sm) {
                             timeBlock(label: "START", binding: startTimeBinding)
                             Image(systemName: "arrow.right")
-                                .font(.system(size: 12, weight: .medium))
+                                .scaledFont(size: 12, weight: .medium)
                                 .foregroundStyle(ICareColors.textTertiary)
                             timeBlock(label: "END", binding: endTimeBinding)
                             Spacer(minLength: 0)
@@ -139,7 +139,7 @@ struct ScheduleSetupStep: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .scaledFont(size: 11, weight: .semibold)
             .foregroundStyle(ICareColors.textTertiary)
             .tracking(1.5)
             .padding(.bottom, ICareSpacing.sm)
@@ -154,10 +154,10 @@ struct ScheduleSetupStep: View {
         HStack(alignment: .center, spacing: ICareSpacing.md) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .scaledFont(size: 16, weight: .semibold)
                     .foregroundStyle(ICareColors.textPrimary)
                 Text(subtitle)
-                    .font(.system(size: 13, weight: .regular))
+                    .scaledFont(size: 13, weight: .regular)
                     .foregroundStyle(ICareColors.textTertiary)
             }
             Spacer(minLength: 0)
@@ -170,7 +170,7 @@ struct ScheduleSetupStep: View {
     private func timeBlock(label: String, binding: Binding<Date>) -> some View {
         HStack(spacing: ICareSpacing.xs) {
             Text(label)
-                .font(.system(size: 10, weight: .semibold))
+                .scaledFont(size: 10, weight: .semibold)
                 .foregroundStyle(ICareColors.textTertiary)
                 .tracking(0.5)
             DatePicker("", selection: binding, displayedComponents: .hourAndMinute)

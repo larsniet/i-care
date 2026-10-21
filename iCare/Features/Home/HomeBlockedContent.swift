@@ -12,14 +12,14 @@ struct HomeBlockedRing: View {
                 size: ringSize,
                 trackWidth: ringWidth,
                 fillWidth: ringWidth,
-                trackColor: ICareColors.separator,
+                trackColor: ICareColors.ringTrack,
                 fillColor: ICareColors.statusBlocked
             )
             .opacity(0.3)
 
             VStack(spacing: ICareSpacing.sm) {
                 Text("NOTIFICATIONS OFF")
-                    .font(.system(size: 11, weight: .semibold))
+                    .scaledFont(size: 11, weight: .semibold)
                     .foregroundStyle(ICareColors.statusBlocked)
                     .tracking(1.5)
 
@@ -28,7 +28,7 @@ struct HomeBlockedRing: View {
                     .foregroundStyle(ICareColors.statusBlocked.opacity(0.6))
 
                 Text("Enable notifications to\nreceive break reminders")
-                    .font(.system(size: 15, weight: .regular))
+                    .scaledFont(size: 15, weight: .regular)
                     .foregroundStyle(ICareColors.textSecondary)
                     .multilineTextAlignment(.center)
             }
@@ -39,19 +39,29 @@ struct HomeBlockedRing: View {
 // MARK: - Blocked Buttons
 
 struct HomeBlockedButtons: View {
+    @EnvironmentObject private var appState: AppState
+
+    // Skipping permission in onboarding leaves no Notifications row in iOS Settings,
+    // so ask directly until iOS has an answer.
+    private var canAskDirectly: Bool {
+        appState.notificationAuthorizationStatus == .notDetermined
+    }
+
     var body: some View {
         Button {
-            if let url = URL(string: UIApplication.openSettingsURLString) {
+            if canAskDirectly {
+                Task { await appState.requestNotificationPermission() }
+            } else if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
                 UIApplication.shared.open(url)
             }
         } label: {
             HStack(spacing: ICareSpacing.sm) {
-                Image(systemName: "gear")
-                    .font(.system(size: 14))
-                Text("Open Settings")
+                Image(systemName: canAskDirectly ? "bell.fill" : "gear")
+                    .scaledFont(size: 14)
+                Text(canAskDirectly ? "Enable Notifications" : "Open Settings")
             }
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(.white)
+            .scaledFont(size: 16, weight: .semibold)
+            .foregroundStyle(ICareColors.onBrand)
             .frame(maxWidth: .infinity)
             .frame(height: 52)
             .background(ICareColors.brand)

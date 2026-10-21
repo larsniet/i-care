@@ -4,6 +4,7 @@ import UIKit
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.openURL) private var openURL
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selectedIntervalMinutes = 20
     @State private var selectedBreakDurationSeconds = 20
 
@@ -25,6 +26,7 @@ struct SettingsView: View {
                 .padding(.horizontal, ICareSpacing.lg)
                 .padding(.top, ICareSpacing.base)
                 .padding(.bottom, ICareSpacing.xl)
+                .readableWidth()
             }
         }
         .onAppear { syncLocalSelectionsFromSettings() }
@@ -56,7 +58,7 @@ struct SettingsView: View {
     private var pageHeader: some View {
         HStack {
             Text("Settings")
-                .font(.system(size: 18, weight: .semibold))
+                .scaledFont(size: 18, weight: .semibold)
                 .foregroundStyle(ICareColors.textPrimary)
             Spacer()
         }
@@ -82,9 +84,9 @@ struct SettingsView: View {
 
             VStack(spacing: 0) {
                 settingsRow {
-                    HStack {
+                    pickerRowLayout {
                         Text("Interval")
-                            .font(.system(size: 15, weight: .medium))
+                            .scaledFont(size: 15, weight: .medium)
                             .foregroundStyle(ICareColors.textPrimary)
                         Spacer()
                         Picker("", selection: intervalMinutesBinding) {
@@ -100,9 +102,9 @@ struct SettingsView: View {
                 rowDivider
 
                 settingsRow {
-                    HStack {
+                    pickerRowLayout {
                         Text("Break Duration")
-                            .font(.system(size: 15, weight: .medium))
+                            .scaledFont(size: 15, weight: .medium)
                             .foregroundStyle(ICareColors.textPrimary)
                         Spacer()
                         Picker("", selection: breakDurationSecondsBinding) {
@@ -129,7 +131,7 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 settingsRow {
                     Toggle("Limit to Active Hours", isOn: activeHoursEnabledBinding)
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textPrimary)
                         .tint(ICareColors.brand)
                 }
@@ -143,7 +145,7 @@ struct SettingsView: View {
                             selection: activeStartTimeBinding,
                             displayedComponents: .hourAndMinute
                         )
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textPrimary)
                         .tint(ICareColors.brand)
                     }
@@ -156,7 +158,7 @@ struct SettingsView: View {
                             selection: activeEndTimeBinding,
                             displayedComponents: .hourAndMinute
                         )
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textPrimary)
                         .tint(ICareColors.brand)
                     }
@@ -166,7 +168,7 @@ struct SettingsView: View {
 
                 settingsRow {
                     Toggle("Weekdays Only", isOn: weekdaysOnlyBinding)
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textPrimary)
                         .tint(ICareColors.brand)
                 }
@@ -186,7 +188,7 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 settingsRow {
                     Toggle("Sound", isOn: soundEnabledBinding)
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textPrimary)
                         .tint(ICareColors.brand)
                 }
@@ -195,7 +197,7 @@ struct SettingsView: View {
 
                 settingsRow {
                     Toggle("Haptics", isOn: hapticsEnabledBinding)
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textPrimary)
                         .tint(ICareColors.brand)
                 }
@@ -215,19 +217,39 @@ struct SettingsView: View {
                 settingsRow {
                     HStack(spacing: ICareSpacing.md) {
                         Image(systemName: notificationStatusIcon)
-                            .font(.system(size: 22))
+                            .scaledFont(size: 22)
                             .foregroundStyle(notificationStatusColor)
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Permission")
-                                .font(.system(size: 15, weight: .medium))
+                                .scaledFont(size: 15, weight: .medium)
                                 .foregroundStyle(ICareColors.textPrimary)
                             Text(notificationStatusDescription)
-                                .font(.system(size: 13))
+                                .scaledFont(size: 13)
                                 .foregroundStyle(ICareColors.textSecondary)
                         }
 
                         Spacer(minLength: 0)
+                    }
+                }
+
+                if appState.notificationAuthorizationStatus == .notDetermined {
+                    rowDivider
+
+                    settingsRow {
+                        Button {
+                            Task { await appState.requestNotificationPermission() }
+                        } label: {
+                            HStack {
+                                Text("Enable Notifications")
+                                    .scaledFont(size: 15, weight: .semibold)
+                                    .foregroundStyle(ICareColors.brand)
+                                Spacer()
+                                Image(systemName: "bell.fill")
+                                    .scaledFont(size: 13, weight: .semibold)
+                                    .foregroundStyle(ICareColors.brand)
+                            }
+                        }
                     }
                 }
 
@@ -236,17 +258,17 @@ struct SettingsView: View {
 
                     settingsRow {
                         Button {
-                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                            if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
                                 openURL(url)
                             }
                         } label: {
                             HStack {
                                 Text("Open Settings")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .scaledFont(size: 15, weight: .semibold)
                                     .foregroundStyle(ICareColors.brand)
                                 Spacer()
                                 Image(systemName: "arrow.up.right")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .scaledFont(size: 13, weight: .semibold)
                                     .foregroundStyle(ICareColors.brand)
                             }
                         }
@@ -260,9 +282,16 @@ struct SettingsView: View {
 
     // MARK: - Shared Components
 
+    /// Label and value side by side, or stacked once the text is too big to fit.
+    private var pickerRowLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: ICareSpacing.xs))
+            : AnyLayout(HStackLayout())
+    }
+
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .scaledFont(size: 11, weight: .semibold)
             .foregroundStyle(ICareColors.textTertiary)
             .tracking(1.5)
             .padding(.leading, ICareSpacing.xs)

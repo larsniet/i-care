@@ -41,16 +41,16 @@ struct NotificationStep: View {
     private func benefitCard(icon: String, title: String, detail: String) -> some View {
         HStack(alignment: .center, spacing: ICareSpacing.base) {
             Image(systemName: icon)
-                .font(.system(size: 20))
+                .scaledFont(size: 20)
                 .foregroundStyle(ICareColors.brand)
                 .frame(width: 28)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .scaledFont(size: 16, weight: .semibold)
                     .foregroundStyle(ICareColors.textPrimary)
                 Text(detail)
-                    .font(.system(size: 13, weight: .regular))
+                    .scaledFont(size: 13, weight: .regular)
                     .foregroundStyle(ICareColors.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }

@@ -30,6 +30,7 @@ enum CompletionTracker {
         startedAt: Date,
         type: BreakCompletionType,
         device: DeviceType,
+        completedAt: Date = Date(),
         into summary: inout DailySummary
     ) {
         if !summary.isToday {
@@ -39,7 +40,7 @@ enum CompletionTracker {
         let record = BreakRecord(
             id: id,
             startedAt: startedAt,
-            completedAt: Date(),
+            completedAt: completedAt,
             sourceDevice: device,
             completionType: type
         )

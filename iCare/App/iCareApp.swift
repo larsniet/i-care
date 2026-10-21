@@ -14,10 +14,13 @@ struct iCareApp: App {
                     )
                 ) { _ in
                     appState.notificationCoordinator.isAppInForeground = true
-                    appState.refreshFocusFilterState()
                     WatchSyncManager.shared.requestSync()
-                    Task { await appState.refreshNotificationStatus() }
+                    Task {
+                        await ICareRemindersFocusFilter.syncFromSystem(into: appState)
+                        await appState.refreshNotificationStatus()
+                    }
                 }
+                .task { await ICareRemindersFocusFilter.syncFromSystem(into: appState) }
                 .onReceive(
                     NotificationCenter.default.publisher(
                         for: didEnterBackgroundNotification

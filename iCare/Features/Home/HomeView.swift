@@ -61,6 +61,7 @@ struct HomeView: View {
 
                 focusDashboard
             }
+            .readableWidth()
         }
     }
 
@@ -127,10 +128,10 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(appState.todaySummary.completedBreakCount == 1
                      ? "1 break" : "\(appState.todaySummary.completedBreakCount) breaks")
-                    .font(.system(size: 18, weight: .semibold))
+                    .scaledFont(size: 18, weight: .semibold)
                     .foregroundStyle(ICareColors.textPrimary)
                 Text("COMPLETED TODAY")
-                    .font(.system(size: 11, weight: .semibold))
+                    .scaledFont(size: 11, weight: .semibold)
                     .foregroundStyle(ICareColors.textTertiary)
                     .tracking(1)
             }
@@ -155,7 +156,7 @@ struct HomeView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 32, height: 32)
                 Text("iCare")
-                    .font(.system(size: 18, weight: .semibold))
+                    .scaledFont(size: 18, weight: .semibold)
                     .foregroundStyle(ICareColors.brand)
             }
 

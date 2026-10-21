@@ -46,17 +46,17 @@ struct FocusModeStep: View {
         HStack(alignment: .center, spacing: ICareSpacing.base) {
             Text(step)
                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(ICareColors.onBrand)
                 .frame(width: 28, height: 28)
                 .background(ICareColors.brand)
                 .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .scaledFont(size: 16, weight: .semibold)
                     .foregroundStyle(ICareColors.textPrimary)
                 Text(detail)
-                    .font(.system(size: 13, weight: .regular))
+                    .scaledFont(size: 13, weight: .regular)
                     .foregroundStyle(ICareColors.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -75,22 +75,22 @@ struct FocusModeStep: View {
         } label: {
             HStack(spacing: ICareSpacing.sm) {
                 Image(systemName: "gear")
-                    .font(.system(size: 18))
+                    .scaledFont(size: 18)
                     .foregroundStyle(ICareColors.brand)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Open Settings")
-                        .font(.system(size: 15, weight: .semibold))
+                        .scaledFont(size: 15, weight: .semibold)
                         .foregroundStyle(ICareColors.textPrimary)
                     Text("You can set this up now or anytime later")
-                        .font(.system(size: 13))
+                        .scaledFont(size: 13)
                         .foregroundStyle(ICareColors.textTertiary)
                 }
 
                 Spacer(minLength: 0)
 
                 Image(systemName: "arrow.up.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .scaledFont(size: 13, weight: .semibold)
                     .foregroundStyle(ICareColors.textTertiary)
             }
             .padding(ICareSpacing.base)

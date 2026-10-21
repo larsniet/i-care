@@ -71,11 +71,11 @@ struct WelcomeStep: View {
     private func ruleCard(value: String, unit: String, label: String, icon: String) -> some View {
         VStack(spacing: ICareSpacing.sm) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .scaledFont(size: 16)
                 .foregroundStyle(ICareColors.brand.opacity(0.5))
 
             Text(label)
-                .font(.system(size: 10, weight: .semibold))
+                .scaledFont(size: 10, weight: .semibold)
                 .foregroundStyle(ICareColors.textTertiary)
                 .tracking(1)
                 .textCase(.uppercase)
@@ -85,7 +85,7 @@ struct WelcomeStep: View {
                     .font(.system(size: 28, weight: .semibold, design: .rounded))
                     .foregroundStyle(ICareColors.brand)
                 Text(unit)
-                    .font(.system(size: 12, weight: .medium))
+                    .scaledFont(size: 12, weight: .medium)
                     .foregroundStyle(ICareColors.textTertiary)
             }
         }

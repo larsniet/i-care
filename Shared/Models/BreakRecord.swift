@@ -3,6 +3,14 @@ import Foundation
 enum DeviceType: String, Codable, Sendable {
     case iphone
     case watch
+
+    static var current: DeviceType {
+        #if os(watchOS)
+        return .watch
+        #else
+        return .iphone
+        #endif
+    }
 }
 
 enum BreakCompletionType: String, Codable, Sendable {

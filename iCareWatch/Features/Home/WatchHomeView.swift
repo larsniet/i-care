@@ -136,6 +136,7 @@ struct WatchHomeView: View {
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Reset timer")
 
                     Button {
                         appState.startBreak()
@@ -143,7 +144,7 @@ struct WatchHomeView: View {
                     } label: {
                         Text("Start")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(ICareColors.onBrand)
                             .padding(.horizontal, ICareSpacing.base)
                             .padding(.vertical, 6)
                             .background(ICareColors.brand)
@@ -162,6 +163,7 @@ struct WatchHomeView: View {
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Pause reminders")
                 }
             }
         }
@@ -170,7 +172,7 @@ struct WatchHomeView: View {
     private var dueButtons: some View {
         HStack(spacing: ICareSpacing.sm) {
             Button {
-                appState.dismissReminder(device: .watch)
+                appState.dismissReminder()
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .bold))
@@ -180,6 +182,7 @@ struct WatchHomeView: View {
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Dismiss break")
 
             Button {
                 appState.startBreak()
@@ -187,7 +190,7 @@ struct WatchHomeView: View {
             } label: {
                 Text("Start")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(ICareColors.onBrand)
                     .padding(.horizontal, ICareSpacing.base)
                     .padding(.vertical, 6)
                     .background(ICareColors.brand)
@@ -211,13 +214,14 @@ struct WatchHomeView: View {
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Start break")
 
             Button {
                 appState.resume()
             } label: {
                 Text("Resume")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(ICareColors.onBrand)
                     .padding(.horizontal, ICareSpacing.base)
                     .padding(.vertical, 6)
                     .background(ICareColors.brand)
@@ -269,7 +273,7 @@ struct WatchHomeView: View {
                 size: 120,
                 trackWidth: 4,
                 fillWidth: 4,
-                trackColor: ICareColors.separator,
+                trackColor: ICareColors.ringTrack,
                 fillColor: ICareColors.brand
             )
 
@@ -299,7 +303,7 @@ struct WatchHomeView: View {
                 size: 120,
                 trackWidth: 4,
                 fillWidth: 4,
-                trackColor: ICareColors.separator,
+                trackColor: ICareColors.ringTrack,
                 fillColor: ICareColors.statusPaused
             )
             .opacity(0.4)
@@ -347,7 +351,7 @@ struct WatchHomeView: View {
                 .font(.system(size: 32, weight: .light))
                 .foregroundStyle(ICareColors.textTertiary)
 
-            Text("Reminders are\nturned off")
+            Text(appState.isTurnedOffByFocus ? "Turned off\nby your Focus" : "Reminders are\nturned off")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(ICareColors.textSecondary)
                 .multilineTextAlignment(.center)

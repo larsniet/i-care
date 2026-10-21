@@ -31,13 +31,13 @@ struct HomeActiveRing: View {
                     size: ringSize,
                     trackWidth: ringWidth,
                     fillWidth: ringWidth,
-                    trackColor: ICareColors.separator,
+                    trackColor: ICareColors.ringTrack,
                     fillColor: ICareColors.brand
                 )
 
                 VStack(spacing: ICareSpacing.sm) {
                     Text(statusLabel)
-                        .font(.system(size: 11, weight: .semibold))
+                        .scaledFont(size: 11, weight: .semibold)
                         .foregroundStyle(ICareColors.textTertiary)
                         .tracking(1.5)
 
@@ -47,7 +47,7 @@ struct HomeActiveRing: View {
                         .foregroundStyle(ICareColors.textPrimary)
 
                     Text(nextBreakLabel(at: context.date))
-                        .font(.system(size: 15, weight: .regular))
+                        .scaledFont(size: 15, weight: .regular)
                         .foregroundStyle(ICareColors.textSecondary)
                 }
             }
@@ -61,13 +61,13 @@ struct HomeActiveRing: View {
                 size: ringSize,
                 trackWidth: ringWidth,
                 fillWidth: ringWidth,
-                trackColor: ICareColors.separator,
+                trackColor: ICareColors.ringTrack,
                 fillColor: ICareColors.brand
             )
 
             VStack(spacing: ICareSpacing.sm) {
                 Text("DONE FOR TODAY")
-                    .font(.system(size: 11, weight: .semibold))
+                    .scaledFont(size: 11, weight: .semibold)
                     .foregroundStyle(ICareColors.brand)
                     .tracking(1.5)
 
@@ -76,7 +76,7 @@ struct HomeActiveRing: View {
                     .foregroundStyle(ICareColors.brand)
 
                 Text(resumesLabel)
-                    .font(.system(size: 15, weight: .regular))
+                    .scaledFont(size: 15, weight: .regular)
                     .foregroundStyle(ICareColors.textSecondary)
             }
         }
@@ -152,11 +152,11 @@ struct HomeActiveButtons: View {
                 Button(action: { onStartBreak?() }) {
                     HStack(spacing: ICareSpacing.sm) {
                         Image(systemName: "eye")
-                            .font(.system(size: 14, weight: .medium))
+                            .scaledFont(size: 14, weight: .medium)
                         Text("Start Break")
                     }
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .scaledFont(size: 16, weight: .semibold)
+                    .foregroundStyle(ICareColors.onBrand)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
                     .background(ICareColors.brand)
@@ -167,11 +167,11 @@ struct HomeActiveButtons: View {
                 Button(action: { onStartBreak?() }) {
                     HStack(spacing: ICareSpacing.sm) {
                         Image(systemName: "eye")
-                            .font(.system(size: 14, weight: .medium))
+                            .scaledFont(size: 14, weight: .medium)
                         Text("Start Break")
                     }
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .scaledFont(size: 16, weight: .semibold)
+                    .foregroundStyle(ICareColors.onBrand)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
                     .background(ICareColors.brand)
@@ -192,10 +192,10 @@ struct HomeActiveButtons: View {
                     }) {
                         HStack(spacing: ICareSpacing.xs) {
                             Image(systemName: appState.isAwaitingBreakStart ? "xmark" : "arrow.counterclockwise")
-                                .font(.system(size: 13, weight: .medium))
+                                .scaledFont(size: 13, weight: .medium)
                             Text(appState.isAwaitingBreakStart ? "Dismiss" : "Reset")
                         }
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textSecondary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
@@ -209,10 +209,10 @@ struct HomeActiveButtons: View {
                 Button(action: { appState.pause() }) {
                     HStack(spacing: ICareSpacing.xs) {
                         Image(systemName: "pause.fill")
-                            .font(.system(size: 11))
+                            .scaledFont(size: 11)
                         Text("Pause")
                     }
-                    .font(.system(size: 15, weight: .medium))
+                    .scaledFont(size: 15, weight: .medium)
                     .foregroundStyle(ICareColors.textSecondary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)

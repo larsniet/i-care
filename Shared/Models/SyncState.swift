@@ -23,6 +23,10 @@ struct SyncState: Codable, Equatable, Sendable {
     var notificationsAuthorized: Bool
     var nextReminderAt: Date?
     var todayRecords: [BreakRecord]?
+    /// Device that started the current break, so either side records it correctly.
+    var breakDevice: DeviceType?
+    /// The iPhone's active Focus filter, mirrored to the Watch.
+    var focusFilter: FocusFilterState?
     var updatedAt: Date
     var origin: SyncOrigin
 }
