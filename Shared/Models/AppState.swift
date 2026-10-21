@@ -399,9 +399,17 @@ final class AppState: ObservableObject {
         scheduleDueRefresh(at: state.phase == .work ? state.nextReminderAt : nil)
 
         let effectiveSettings = settingsWithFocusOverrides()
+        #if os(watchOS)
+        // The iPhone owns the reminder schedule and iOS forwards its reminders to the
+        // Watch. A Watch-side copy went stale whenever watchOS delayed a sync, and then
+        // reminded at old times. With this false, every apply (including the first
+        // launch after updating) clears any reminders an older version queued here.
+        let canScheduleLocally = false
+        #else
         let canScheduleLocally = effectiveSettings.remindersEnabled
             && !runtimeState.isPaused
             && notificationAuthorizationStatus.allowsReminders
+        #endif
 
         switch state.phase {
         case .break:
