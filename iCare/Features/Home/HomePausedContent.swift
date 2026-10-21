@@ -11,14 +11,14 @@ struct HomePausedRing: View {
                 size: ringSize,
                 trackWidth: ringWidth,
                 fillWidth: ringWidth,
-                trackColor: ICareColors.separator,
+                trackColor: ICareColors.ringTrack,
                 fillColor: ICareColors.brand
             )
             .opacity(0.4)
 
             VStack(spacing: ICareSpacing.sm) {
                 Text("PAUSED")
-                    .font(.system(size: 11, weight: .semibold))
+                    .scaledFont(size: 11, weight: .semibold)
                     .foregroundStyle(ICareColors.statusPaused)
                     .tracking(1.5)
 
@@ -27,7 +27,7 @@ struct HomePausedRing: View {
                     .foregroundStyle(ICareColors.statusPaused)
 
                 Text("Reminders are paused")
-                    .font(.system(size: 15, weight: .regular))
+                    .scaledFont(size: 15, weight: .regular)
                     .foregroundStyle(ICareColors.textSecondary)
             }
         }
@@ -43,11 +43,11 @@ struct HomePausedButtons: View {
         Button(action: { appState.resume() }) {
             HStack(spacing: ICareSpacing.sm) {
                 Image(systemName: "play.fill")
-                    .font(.system(size: 12))
+                    .scaledFont(size: 12)
                 Text("Resume Reminders")
             }
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(.white)
+            .scaledFont(size: 16, weight: .semibold)
+            .foregroundStyle(ICareColors.onBrand)
             .frame(maxWidth: .infinity)
             .frame(height: 52)
             .background(ICareColors.brand)

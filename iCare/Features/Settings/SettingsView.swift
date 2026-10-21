@@ -4,6 +4,9 @@ import UIKit
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.openURL) private var openURL
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var selectedIntervalMinutes = 20
+    @State private var selectedBreakDurationSeconds = 20
 
     private let intervalOptions = [15, 20, 30, 45]
     private let breakDurationOptions = [10, 20, 30]
@@ -15,6 +18,7 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: ICareSpacing.lg) {
                     pageHeader
+                        .clearOfWindowControls()
                     scheduleSection
                     activeHoursSection
                     notificationsSection
@@ -23,6 +27,29 @@ struct SettingsView: View {
                 .padding(.horizontal, ICareSpacing.lg)
                 .padding(.top, ICareSpacing.base)
                 .padding(.bottom, ICareSpacing.xl)
+                .readableWidth()
+            }
+        }
+        .onAppear { syncLocalSelectionsFromSettings() }
+        .onChange(of: appState.settings) { _, _ in
+            syncLocalSelectionsFromSettings()
+        }
+        .onChange(of: selectedIntervalMinutes) { _, newValue in
+            guard newValue != appState.settings.reminderIntervalMinutes else { return }
+            Task { @MainActor in
+                await Task.yield()
+                var s = appState.settings
+                s.reminderIntervalMinutes = newValue
+                appState.settings = s
+            }
+        }
+        .onChange(of: selectedBreakDurationSeconds) { _, newValue in
+            guard newValue != appState.settings.breakDurationSeconds else { return }
+            Task { @MainActor in
+                await Task.yield()
+                var s = appState.settings
+                s.breakDurationSeconds = newValue
+                appState.settings = s
             }
         }
     }
@@ -32,7 +59,7 @@ struct SettingsView: View {
     private var pageHeader: some View {
         HStack {
             Text("Settings")
-                .font(.system(size: 18, weight: .semibold))
+                .scaledFont(size: 18, weight: .semibold)
                 .foregroundStyle(ICareColors.textPrimary)
             Spacer()
         }
@@ -58,13 +85,13 @@ struct SettingsView: View {
 
             VStack(spacing: 0) {
                 settingsRow {
-                    HStack {
+                    pickerRowLayout {
                         Text("Interval")
-                            .font(.system(size: 15, weight: .medium))
+                            .scaledFont(size: 15, weight: .medium)
                             .foregroundStyle(ICareColors.textPrimary)
                         Spacer()
                         Picker("", selection: intervalMinutesBinding) {
-                            ForEach(intervalOptions, id: \.self) { minutes in
+                            ForEach(Set(intervalOptions + [selectedIntervalMinutes]).sorted(), id: \.self) { minutes in
                                 Text("\(minutes) min").tag(minutes)
                             }
                         }
@@ -76,13 +103,13 @@ struct SettingsView: View {
                 rowDivider
 
                 settingsRow {
-                    HStack {
+                    pickerRowLayout {
                         Text("Break Duration")
-                            .font(.system(size: 15, weight: .medium))
+                            .scaledFont(size: 15, weight: .medium)
                             .foregroundStyle(ICareColors.textPrimary)
                         Spacer()
                         Picker("", selection: breakDurationSecondsBinding) {
-                            ForEach(breakDurationOptions, id: \.self) { seconds in
+                            ForEach(Set(breakDurationOptions + [selectedBreakDurationSeconds]).sorted(), id: \.self) { seconds in
                                 Text("\(seconds) sec").tag(seconds)
                             }
                         }
@@ -105,7 +132,7 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 settingsRow {
                     Toggle("Limit to Active Hours", isOn: activeHoursEnabledBinding)
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textPrimary)
                         .tint(ICareColors.brand)
                 }
@@ -119,7 +146,7 @@ struct SettingsView: View {
                             selection: activeStartTimeBinding,
                             displayedComponents: .hourAndMinute
                         )
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textPrimary)
                         .tint(ICareColors.brand)
                     }
@@ -132,7 +159,7 @@ struct SettingsView: View {
                             selection: activeEndTimeBinding,
                             displayedComponents: .hourAndMinute
                         )
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textPrimary)
                         .tint(ICareColors.brand)
                     }
@@ -142,7 +169,7 @@ struct SettingsView: View {
 
                 settingsRow {
                     Toggle("Weekdays Only", isOn: weekdaysOnlyBinding)
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textPrimary)
                         .tint(ICareColors.brand)
                 }
@@ -162,7 +189,7 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 settingsRow {
                     Toggle("Sound", isOn: soundEnabledBinding)
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textPrimary)
                         .tint(ICareColors.brand)
                 }
@@ -171,7 +198,7 @@ struct SettingsView: View {
 
                 settingsRow {
                     Toggle("Haptics", isOn: hapticsEnabledBinding)
-                        .font(.system(size: 15, weight: .medium))
+                        .scaledFont(size: 15, weight: .medium)
                         .foregroundStyle(ICareColors.textPrimary)
                         .tint(ICareColors.brand)
                 }
@@ -191,19 +218,39 @@ struct SettingsView: View {
                 settingsRow {
                     HStack(spacing: ICareSpacing.md) {
                         Image(systemName: notificationStatusIcon)
-                            .font(.system(size: 22))
+                            .scaledFont(size: 22)
                             .foregroundStyle(notificationStatusColor)
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Permission")
-                                .font(.system(size: 15, weight: .medium))
+                                .scaledFont(size: 15, weight: .medium)
                                 .foregroundStyle(ICareColors.textPrimary)
                             Text(notificationStatusDescription)
-                                .font(.system(size: 13))
+                                .scaledFont(size: 13)
                                 .foregroundStyle(ICareColors.textSecondary)
                         }
 
                         Spacer(minLength: 0)
+                    }
+                }
+
+                if appState.notificationAuthorizationStatus == .notDetermined {
+                    rowDivider
+
+                    settingsRow {
+                        Button {
+                            Task { await appState.requestNotificationPermission() }
+                        } label: {
+                            HStack {
+                                Text("Enable Notifications")
+                                    .scaledFont(size: 15, weight: .semibold)
+                                    .foregroundStyle(ICareColors.brand)
+                                Spacer()
+                                Image(systemName: "bell.fill")
+                                    .scaledFont(size: 13, weight: .semibold)
+                                    .foregroundStyle(ICareColors.brand)
+                            }
+                        }
                     }
                 }
 
@@ -212,17 +259,17 @@ struct SettingsView: View {
 
                     settingsRow {
                         Button {
-                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                            if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
                                 openURL(url)
                             }
                         } label: {
                             HStack {
                                 Text("Open Settings")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .scaledFont(size: 15, weight: .semibold)
                                     .foregroundStyle(ICareColors.brand)
                                 Spacer()
                                 Image(systemName: "arrow.up.right")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .scaledFont(size: 13, weight: .semibold)
                                     .foregroundStyle(ICareColors.brand)
                             }
                         }
@@ -236,9 +283,16 @@ struct SettingsView: View {
 
     // MARK: - Shared Components
 
+    /// Label and value side by side, or stacked once the text is too big to fit.
+    private var pickerRowLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: ICareSpacing.xs))
+            : AnyLayout(HStackLayout())
+    }
+
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .scaledFont(size: 11, weight: .semibold)
             .foregroundStyle(ICareColors.textTertiary)
             .tracking(1.5)
             .padding(.leading, ICareSpacing.xs)
@@ -260,23 +314,15 @@ struct SettingsView: View {
 
     private var intervalMinutesBinding: Binding<Int> {
         Binding(
-            get: { appState.settings.reminderIntervalMinutes },
-            set: { newValue in
-                var s = appState.settings
-                s.reminderIntervalMinutes = newValue
-                appState.settings = s
-            }
+            get: { selectedIntervalMinutes },
+            set: { selectedIntervalMinutes = $0 }
         )
     }
 
     private var breakDurationSecondsBinding: Binding<Int> {
         Binding(
-            get: { appState.settings.breakDurationSeconds },
-            set: { newValue in
-                var s = appState.settings
-                s.breakDurationSeconds = newValue
-                appState.settings = s
-            }
+            get: { selectedBreakDurationSeconds },
+            set: { selectedBreakDurationSeconds = $0 }
         )
     }
 
@@ -385,6 +431,15 @@ struct SettingsView: View {
         components.hour = hour
         components.minute = minute
         return Calendar.current.date(from: components) ?? Date()
+    }
+
+    private func syncLocalSelectionsFromSettings() {
+        if selectedIntervalMinutes != appState.settings.reminderIntervalMinutes {
+            selectedIntervalMinutes = appState.settings.reminderIntervalMinutes
+        }
+        if selectedBreakDurationSeconds != appState.settings.breakDurationSeconds {
+            selectedBreakDurationSeconds = appState.settings.breakDurationSeconds
+        }
     }
 
     // MARK: - Status Helpers

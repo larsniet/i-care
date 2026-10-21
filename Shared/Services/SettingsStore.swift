@@ -6,6 +6,7 @@ enum SettingsStore {
     private static let runtimeKey = "icare.runtime_state"
     private static let onboardingKey = "icare.onboarding_completed"
     private static let focusFilterKey = "icare.focus_filter_state"
+    private static let syncVersionKey = "icare.sync_version"
 
     private static var defaults: UserDefaults { .standard }
 
@@ -59,5 +60,31 @@ enum SettingsStore {
     static func save(_ state: FocusFilterState) {
         guard let data = try? JSONEncoder().encode(state) else { return }
         defaults.set(data, forKey: focusFilterKey)
+    }
+
+    // MARK: - Sync Version
+
+    static func loadSyncVersion() -> Int {
+        defaults.integer(forKey: syncVersionKey)
+    }
+
+    static func saveSyncVersion(_ version: Int) {
+        defaults.set(version, forKey: syncVersionKey)
+    }
+
+    // MARK: - Sync State
+
+    private static let syncStateKey = "icare.sync_state"
+
+    static func loadSyncState() -> SyncState? {
+        guard let data = defaults.data(forKey: syncStateKey),
+              let value = try? JSONDecoder().decode(SyncState.self, from: data)
+        else { return nil }
+        return value
+    }
+
+    static func save(_ state: SyncState) {
+        guard let data = try? JSONEncoder().encode(state) else { return }
+        defaults.set(data, forKey: syncStateKey)
     }
 }

@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ScheduleSetupStep: View {
     @EnvironmentObject private var appState: AppState
+    @State private var selectedIntervalMinutes = 20
+    @State private var selectedBreakDurationSeconds = 20
 
     private var activeHoursEnabled: Binding<Bool> {
         Binding(
@@ -36,7 +38,7 @@ struct ScheduleSetupStep: View {
                         subtitle: "Remind me every...",
                         trailing: {
                             Picker("", selection: intervalBinding) {
-                                ForEach(intervalOptions, id: \.self) { m in
+                                ForEach(Set(intervalOptions + [selectedIntervalMinutes]).sorted(), id: \.self) { m in
                                     Text("\(m)m").tag(m)
                                 }
                             }
@@ -53,7 +55,7 @@ struct ScheduleSetupStep: View {
                         subtitle: "Length of your rest",
                         trailing: {
                             Picker("", selection: breakBinding) {
-                                ForEach(breakOptions, id: \.self) { s in
+                                ForEach(Set(breakOptions + [selectedBreakDurationSeconds]).sorted(), id: \.self) { s in
                                     Text("\(s)s").tag(s)
                                 }
                             }
@@ -82,13 +84,21 @@ struct ScheduleSetupStep: View {
                     )
 
                     if activeHoursEnabled.wrappedValue {
-                        HStack(spacing: ICareSpacing.sm) {
-                            timeBlock(label: "START", binding: startTimeBinding)
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(ICareColors.textTertiary)
-                            timeBlock(label: "END", binding: endTimeBinding)
-                            Spacer(minLength: 0)
+                        // Side by side, or stacked when large text doesn't fit.
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: ICareSpacing.sm) {
+                                timeBlock(label: "START", binding: startTimeBinding)
+                                Image(systemName: "arrow.right")
+                                    .scaledFont(size: 12, weight: .medium)
+                                    .foregroundStyle(ICareColors.textTertiary)
+                                timeBlock(label: "END", binding: endTimeBinding)
+                                Spacer(minLength: 0)
+                            }
+                            VStack(alignment: .leading, spacing: ICareSpacing.sm) {
+                                timeBlock(label: "START", binding: startTimeBinding)
+                                timeBlock(label: "END", binding: endTimeBinding)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(.horizontal, ICareSpacing.base)
                         .padding(.bottom, ICareSpacing.base)
@@ -113,13 +123,31 @@ struct ScheduleSetupStep: View {
             .padding(.horizontal, ICareSpacing.lg)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .onAppear { syncLocalSelectionsFromSettings() }
+        .onChange(of: appState.settings) { _, _ in
+            syncLocalSelectionsFromSettings()
+        }
+        .onChange(of: selectedIntervalMinutes) { _, newValue in
+            guard newValue != appState.settings.reminderIntervalMinutes else { return }
+            Task { @MainActor in
+                await Task.yield()
+                appState.settings.reminderIntervalMinutes = newValue
+            }
+        }
+        .onChange(of: selectedBreakDurationSeconds) { _, newValue in
+            guard newValue != appState.settings.breakDurationSeconds else { return }
+            Task { @MainActor in
+                await Task.yield()
+                appState.settings.breakDurationSeconds = newValue
+            }
+        }
     }
 
     // MARK: - Helpers
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold))
+            .scaledFont(size: 11, weight: .semibold)
             .foregroundStyle(ICareColors.textTertiary)
             .tracking(1.5)
             .padding(.bottom, ICareSpacing.sm)
@@ -134,10 +162,10 @@ struct ScheduleSetupStep: View {
         HStack(alignment: .center, spacing: ICareSpacing.md) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .scaledFont(size: 16, weight: .semibold)
                     .foregroundStyle(ICareColors.textPrimary)
                 Text(subtitle)
-                    .font(.system(size: 13, weight: .regular))
+                    .scaledFont(size: 13, weight: .regular)
                     .foregroundStyle(ICareColors.textTertiary)
             }
             Spacer(minLength: 0)
@@ -150,7 +178,8 @@ struct ScheduleSetupStep: View {
     private func timeBlock(label: String, binding: Binding<Date>) -> some View {
         HStack(spacing: ICareSpacing.xs) {
             Text(label)
-                .font(.system(size: 10, weight: .semibold))
+                .scaledFont(size: 10, weight: .semibold)
+                .fixedSize()
                 .foregroundStyle(ICareColors.textTertiary)
                 .tracking(0.5)
             DatePicker("", selection: binding, displayedComponents: .hourAndMinute)
@@ -163,15 +192,15 @@ struct ScheduleSetupStep: View {
 
     private var intervalBinding: Binding<Int> {
         Binding(
-            get: { appState.settings.reminderIntervalMinutes },
-            set: { appState.settings.reminderIntervalMinutes = $0 }
+            get: { selectedIntervalMinutes },
+            set: { selectedIntervalMinutes = $0 }
         )
     }
 
     private var breakBinding: Binding<Int> {
         Binding(
-            get: { appState.settings.breakDurationSeconds },
-            set: { appState.settings.breakDurationSeconds = $0 }
+            get: { selectedBreakDurationSeconds },
+            set: { selectedBreakDurationSeconds = $0 }
         )
     }
 
@@ -233,5 +262,14 @@ struct ScheduleSetupStep: View {
         components.hour = hour
         components.minute = minute
         return Calendar.current.date(from: components) ?? Date()
+    }
+
+    private func syncLocalSelectionsFromSettings() {
+        if selectedIntervalMinutes != appState.settings.reminderIntervalMinutes {
+            selectedIntervalMinutes = appState.settings.reminderIntervalMinutes
+        }
+        if selectedBreakDurationSeconds != appState.settings.breakDurationSeconds {
+            selectedBreakDurationSeconds = appState.settings.breakDurationSeconds
+        }
     }
 }

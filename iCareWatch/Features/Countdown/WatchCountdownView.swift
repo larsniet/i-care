@@ -9,6 +9,7 @@ struct WatchCountdownView: View {
     @State private var didPlayStartHaptic = false
     @State private var endDate: Date?
     @State private var duration: Int = 20
+    @State private var isBoundToActiveBreak = false
 
     var body: some View {
         ZStack {
@@ -38,15 +39,13 @@ struct WatchCountdownView: View {
                                     .font(.system(size: 34, weight: .light, design: .rounded))
                                     .monospacedDigit()
                                     .foregroundStyle(ICareColors.textPrimary)
-                                    .contentTransition(.numericText())
-                                    .animation(ICareAnimation.countdown, value: remaining)
                                     .transition(.scale.combined(with: .opacity))
                             }
                         }
 
                         Spacer(minLength: 0)
 
-                        Button("Skip") {
+                        Button("Dismiss") {
                             finishBreak(type: .skipped)
                         }
                         .font(ICareTypography.caption)
@@ -69,12 +68,18 @@ struct WatchCountdownView: View {
         .onAppear {
             guard endDate == nil else { return }
             duration = max(1, appState.settings.breakDurationSeconds)
-            if let started = appState.breakStartedAt {
-                endDate = started.addingTimeInterval(Double(duration))
-            } else {
-                let now = Date()
-                endDate = now.addingTimeInterval(Double(duration))
+            appState.notificationCoordinator.isShowingCountdown = true
+            guard let started = appState.breakStartedAt else {
+                isPresented = false
+                return
             }
+            let computedEndDate = started.addingTimeInterval(Double(duration))
+            guard computedEndDate.timeIntervalSinceNow > 0 else {
+                isPresented = false
+                return
+            }
+            isBoundToActiveBreak = true
+            endDate = computedEndDate
             if !didPlayStartHaptic && appState.settings.hapticsEnabled {
                 didPlayStartHaptic = true
                 WKInterfaceDevice.current().play(.click)
@@ -84,14 +89,9 @@ struct WatchCountdownView: View {
             }
         }
         .onDisappear {
-            if !isComplete && appState.breakStartedAt != nil {
+            appState.notificationCoordinator.isShowingCountdown = false
+            if isBoundToActiveBreak && !isComplete && appState.breakStartedAt != nil {
                 appState.endBreak(type: .skipped, device: .watch)
-            }
-        }
-        .onChange(of: isComplete) { _, complete in
-            guard complete else { return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                isPresented = false
             }
         }
         .onChange(of: appState.breakStartedAt) { _, newValue in
@@ -113,9 +113,17 @@ struct WatchCountdownView: View {
         isComplete = true
 
         if type == .completed && appState.settings.hapticsEnabled {
-            WKInterfaceDevice.current().play(.stop)
+            WKInterfaceDevice.current().play(.notification)
         }
 
         appState.endBreak(type: type, device: .watch)
+
+        if type == .completed {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                isPresented = false
+            }
+        } else {
+            isPresented = false
+        }
     }
 }

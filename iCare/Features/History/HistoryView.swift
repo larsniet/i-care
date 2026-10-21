@@ -11,6 +11,7 @@ struct HistoryView: View {
             ScrollView {
                 VStack(spacing: ICareSpacing.lg) {
                     pageHeader
+                        .clearOfWindowControls()
                     todayCard
 
                     if todayRecords.isEmpty {
@@ -22,6 +23,7 @@ struct HistoryView: View {
                 .padding(.horizontal, ICareSpacing.lg)
                 .padding(.top, ICareSpacing.base)
                 .padding(.bottom, ICareSpacing.xl)
+                .readableWidth()
             }
         }
         .onAppear { todayRecords = CompletionTracker.loadTodayRecords() }
@@ -35,7 +37,7 @@ struct HistoryView: View {
     private var pageHeader: some View {
         HStack {
             Text("History")
-                .font(.system(size: 18, weight: .semibold))
+                .scaledFont(size: 18, weight: .semibold)
                 .foregroundStyle(ICareColors.textPrimary)
             Spacer()
         }
@@ -59,11 +61,11 @@ struct HistoryView: View {
         VStack(spacing: ICareSpacing.base) {
             HStack {
                 Text("Today")
-                    .font(.system(size: 18, weight: .semibold))
+                    .scaledFont(size: 18, weight: .semibold)
                     .foregroundStyle(ICareColors.textPrimary)
                 Spacer()
                 Text(todayDateString)
-                    .font(.system(size: 13, weight: .medium))
+                    .scaledFont(size: 13, weight: .medium)
                     .foregroundStyle(ICareColors.textTertiary)
             }
 
@@ -75,7 +77,7 @@ struct HistoryView: View {
                 )
                 statBlock(
                     value: "\(appState.todaySummary.skippedBreakCount)",
-                    label: "Skipped",
+                    label: "Dismissed",
                     color: ICareColors.statusPaused
                 )
             }
@@ -91,7 +93,7 @@ struct HistoryView: View {
                 .font(.system(size: 32, weight: .semibold, design: .rounded))
                 .foregroundStyle(color)
             Text(label)
-                .font(.system(size: 12, weight: .medium))
+                .scaledFont(size: 12, weight: .medium)
                 .foregroundStyle(ICareColors.textTertiary)
                 .tracking(0.5)
         }
@@ -110,11 +112,11 @@ struct HistoryView: View {
                 .foregroundStyle(ICareColors.textTertiary)
 
             Text("No breaks yet today")
-                .font(.system(size: 15, weight: .medium))
+                .scaledFont(size: 15, weight: .medium)
                 .foregroundStyle(ICareColors.textSecondary)
 
             Text("Completed breaks will appear here.")
-                .font(.system(size: 13))
+                .scaledFont(size: 13)
                 .foregroundStyle(ICareColors.textTertiary)
                 .multilineTextAlignment(.center)
         }
@@ -127,7 +129,7 @@ struct HistoryView: View {
     private var recordsList: some View {
         VStack(alignment: .leading, spacing: ICareSpacing.sm) {
             Text("TODAY'S BREAKS")
-                .font(.system(size: 11, weight: .semibold))
+                .scaledFont(size: 11, weight: .semibold)
                 .foregroundStyle(ICareColors.textTertiary)
                 .tracking(1.5)
                 .padding(.leading, ICareSpacing.xs)
@@ -150,15 +152,15 @@ struct HistoryView: View {
     private func recordRow(_ record: BreakRecord) -> some View {
         HStack(spacing: ICareSpacing.md) {
             Image(systemName: record.completionType == .completed ? "checkmark.circle.fill" : "forward.fill")
-                .font(.system(size: 18))
+                .scaledFont(size: 18)
                 .foregroundStyle(record.completionType == .completed ? ICareColors.brand : ICareColors.statusPaused)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(record.completionType == .completed ? "Completed" : "Skipped")
-                    .font(.system(size: 15, weight: .medium))
+                Text(record.completionType == .completed ? "Completed" : "Dismissed")
+                    .scaledFont(size: 15, weight: .medium)
                     .foregroundStyle(ICareColors.textPrimary)
                 Text(recordTimeString(record.completedAt))
-                    .font(.system(size: 13))
+                    .scaledFont(size: 13)
                     .foregroundStyle(ICareColors.textTertiary)
             }
 
@@ -166,7 +168,7 @@ struct HistoryView: View {
 
             if record.sourceDevice == .watch {
                 Image(systemName: "applewatch")
-                    .font(.system(size: 14))
+                    .scaledFont(size: 14)
                     .foregroundStyle(ICareColors.textTertiary)
             }
         }

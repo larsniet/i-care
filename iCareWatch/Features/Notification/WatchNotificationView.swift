@@ -2,7 +2,6 @@ import SwiftUI
 
 struct WatchNotificationView: View {
     @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
     @State private var showCountdown = false
 
     var body: some View {
@@ -34,7 +33,7 @@ struct WatchNotificationView: View {
                         } label: {
                             Text("Start")
                                 .font(ICareTypography.headline)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(ICareColors.onBrand)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, ICareSpacing.md)
                                 .background(ICareColors.brand)
@@ -42,10 +41,6 @@ struct WatchNotificationView: View {
                         }
                         .buttonStyle(.plain)
 
-                        SecondaryButton(title: "Snooze") {
-                            appState.snooze()
-                            dismiss()
-                        }
                     }
                     .padding(.horizontal, ICareSpacing.md)
                     .padding(.vertical, ICareSpacing.sm)

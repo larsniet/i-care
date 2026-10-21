@@ -12,5 +12,7 @@ struct RootView: View {
             }
         }
         .animation(ICareAnimation.stateChange, value: appState.hasCompletedOnboarding)
+        // Beyond this the countdown ring and button rows can't fit their text.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
     }
 }

@@ -4,6 +4,7 @@ struct HomeView: View {
     @EnvironmentObject private var appState: AppState
     @State private var selectedTab = 0
     @State private var showCountdown = false
+    @State private var bottomStackHeight: CGFloat = 180
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -39,31 +40,8 @@ struct HomeView: View {
             switch action {
             case .startBreak:
                 showCountdown = true
-            case .snooze, .skip:
+            case .snooze, .dismiss:
                 break
-            }
-        }
-        .onReceive(
-            NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
-        ) { _ in
-            guard let started = appState.breakStartedAt, !showCountdown else { return }
-            let elapsed = Date().timeIntervalSince(started)
-            let duration = Double(appState.settings.breakDurationSeconds)
-            if elapsed < duration {
-                showCountdown = true
-            } else {
-                appState.breakStartedAt = nil
-            }
-        }
-        .onChange(of: appState.breakStartedAt) { _, newValue in
-            if let started = newValue, !showCountdown {
-                let elapsed = Date().timeIntervalSince(started)
-                let duration = Double(appState.settings.breakDurationSeconds)
-                if elapsed < duration {
-                    showCountdown = true
-                } else {
-                    appState.breakStartedAt = nil
-                }
             }
         }
     }
@@ -79,23 +57,30 @@ struct HomeView: View {
 
             VStack(spacing: 0) {
                 homeHeader
+                    .clearOfWindowControls()
                     .padding(.horizontal, ICareSpacing.lg)
                     .padding(.top, ICareSpacing.base)
 
                 focusDashboard
             }
+            .readableWidth()
         }
     }
 
     private var focusDashboard: some View {
         GeometryReader { geo in
-            let buttonAreaHeight: CGFloat = 180
-            let ringCenterY = (geo.size.height - buttonAreaHeight) / 2
+            // Center the ring in the space above the card and buttons, and shrink it
+            // when that space is short (small iPad windows, landscape).
+            let ringArea = max(0, geo.size.height - bottomStackHeight)
+            let ringScale = min(1, max(0.3, (ringArea - ICareSpacing.lg) / ringSize))
 
             ZStack(alignment: .top) {
                 ringView
+                    // The ring is a fixed size, so its labels can only grow so far.
+                    .dynamicTypeSize(...DynamicTypeSize.xLarge)
                     .frame(width: geo.size.width, height: ringSize)
-                    .position(x: geo.size.width / 2, y: ringCenterY)
+                    .scaleEffect(ringScale)
+                    .position(x: geo.size.width / 2, y: ringArea / 2)
 
                 VStack(spacing: ICareSpacing.base) {
                     if appState.currentStatus == .active || appState.currentStatus == .paused {
@@ -107,8 +92,9 @@ struct HomeView: View {
                     bottomButtons
                         .padding(.horizontal, ICareSpacing.lg)
                 }
-                .frame(maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, ICareSpacing.base)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bottomStackHeight = $0 }
+                .frame(maxHeight: .infinity, alignment: .bottom)
             }
             .animation(.easeInOut(duration: 0.35), value: appState.currentStatus)
         }
@@ -150,10 +136,10 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(appState.todaySummary.completedBreakCount == 1
                      ? "1 break" : "\(appState.todaySummary.completedBreakCount) breaks")
-                    .font(.system(size: 18, weight: .semibold))
+                    .scaledFont(size: 18, weight: .semibold)
                     .foregroundStyle(ICareColors.textPrimary)
                 Text("COMPLETED TODAY")
-                    .font(.system(size: 11, weight: .semibold))
+                    .scaledFont(size: 11, weight: .semibold)
                     .foregroundStyle(ICareColors.textTertiary)
                     .tracking(1)
             }
@@ -178,7 +164,7 @@ struct HomeView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 32, height: 32)
                 Text("iCare")
-                    .font(.system(size: 18, weight: .semibold))
+                    .scaledFont(size: 18, weight: .semibold)
                     .foregroundStyle(ICareColors.brand)
             }
 

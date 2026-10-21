@@ -26,14 +26,14 @@ struct OnboardingFlow: View {
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 32, height: 32)
                         Text("iCare")
-                            .font(.system(size: 18, weight: .semibold))
+                            .scaledFont(size: 18, weight: .semibold)
                             .foregroundStyle(ICareColors.brand)
                     }
 
                     Spacer()
 
                     Text("STEP \(displayStep) OF \(totalSteps)")
-                        .font(.system(size: 11, weight: .semibold))
+                        .scaledFont(size: 11, weight: .semibold)
                         .foregroundStyle(ICareColors.textTertiary)
                         .tracking(1.5)
                         .contentTransition(.numericText())
@@ -41,6 +41,7 @@ struct OnboardingFlow: View {
                 .padding(.horizontal, ICareSpacing.lg)
                 .padding(.top, ICareSpacing.base)
                 .padding(.bottom, ICareSpacing.lg)
+                .clearOfWindowControls()
                 .zIndex(1)
 
                 // MARK: - Step Content
@@ -67,6 +68,7 @@ struct OnboardingFlow: View {
                 // MARK: - Buttons
                 buttonArea
             }
+            .readableWidth()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -105,10 +107,10 @@ struct OnboardingFlow: View {
             HStack(spacing: ICareSpacing.sm) {
                 Text(title)
                 Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .scaledFont(size: 14, weight: .semibold)
             }
             .font(ICareTypography.headline)
-            .foregroundStyle(.white)
+            .foregroundStyle(ICareColors.onBrand)
             .frame(maxWidth: .infinity)
             .frame(height: 52)
             .background(ICareColors.brand)

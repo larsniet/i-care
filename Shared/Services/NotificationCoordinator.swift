@@ -6,15 +6,11 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     static let shared = NotificationCoordinator()
 
     static let categoryIdentifier = "ICARE_REMINDER"
-    static let startActionID = "ICARE_START"
-    static let snoozeActionID = "ICARE_SNOOZE"
-    static let skipActionID = "ICARE_SKIP"
     static let reminderIDPrefix = "icare.reminder."
     static let breakCompleteID = "icare.break.complete"
 
     var onStartBreak: (@MainActor () -> Void)?
-    var onSnooze: (@MainActor () -> Void)?
-    var onSkip: (@MainActor () -> Void)?
+    var onDismiss: (@MainActor () -> Void)?
 
     private let center = UNUserNotificationCenter.current()
 
@@ -25,25 +21,34 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
 
     // MARK: - Setup
 
+    static let startActionID = "START_BREAK"
+    static let dismissActionID = "DISMISS_BREAK"
+    static let pendingStartActionKey = "icare.pendingNotificationStartBreak"
+    static let pendingDismissActionKey = "icare.pendingNotificationDismissReminder"
+
     func registerCategories() {
-        let start = UNNotificationAction(
+        let startAction = UNNotificationAction(
             identifier: Self.startActionID,
             title: "Start",
-            options: .foreground
+            options: [.foreground]
         )
-        let snooze = UNNotificationAction(
-            identifier: Self.snoozeActionID,
-            title: "Snooze"
+        // watchOS adds its own Dismiss button (which only closes the notification),
+        // so ours gets a distinct name there instead of showing "Dismiss" twice.
+        #if os(watchOS)
+        let dismissTitle = "Skip break"
+        #else
+        let dismissTitle = "Dismiss"
+        #endif
+        let dismissAction = UNNotificationAction(
+            identifier: Self.dismissActionID,
+            title: dismissTitle,
+            options: [.destructive]
         )
-        let skip = UNNotificationAction(
-            identifier: Self.skipActionID,
-            title: "Skip"
-        )
-
         let category = UNNotificationCategory(
             identifier: Self.categoryIdentifier,
-            actions: [start, snooze, skip],
-            intentIdentifiers: []
+            actions: [startAction, dismissAction],
+            intentIdentifiers: [],
+            options: []
         )
         center.setNotificationCategories([category])
     }
@@ -61,8 +66,16 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
 
     // MARK: - Scheduling
 
+    // Every applied sync state reschedules, so skip identical batches instead of
+    // cancelling and re-adding the same notifications over and over.
+    private var lastScheduledBatch: (dates: [Date], soundEnabled: Bool)?
+
     func scheduleReminders(at dates: [Date], settings: ReminderSettings) {
+        if let last = lastScheduledBatch, last.dates == dates, last.soundEnabled == settings.soundEnabled {
+            return
+        }
         cancelPendingReminders()
+        lastScheduledBatch = (dates, settings.soundEnabled)
 
         for (index, date) in dates.enumerated() {
             let content = UNMutableNotificationContent()
@@ -88,9 +101,16 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     }
 
     func cancelPendingReminders() {
-        let ids = (0..<ReminderEngine.maxBatchSize).map { "\(Self.reminderIDPrefix)\($0)" }
-        center.removePendingNotificationRequests(withIdentifiers: ids)
+        lastScheduledBatch = nil
+        center.removePendingNotificationRequests(withIdentifiers: Self.reminderIDs)
     }
+
+    /// Clears reminders already sitting in Notification Center once a break is handled.
+    func clearDeliveredReminders() {
+        center.removeDeliveredNotifications(withIdentifiers: Self.reminderIDs)
+    }
+
+    private static let reminderIDs = (0..<ReminderEngine.maxBatchSize).map { "\(reminderIDPrefix)\($0)" }
 
     // MARK: - Break Complete Notification
 
@@ -114,6 +134,7 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
 
     func cancelBreakComplete() {
         center.removePendingNotificationRequests(withIdentifiers: [Self.breakCompleteID])
+        center.removeDeliveredNotifications(withIdentifiers: [Self.breakCompleteID])
     }
 
     // MARK: - UNUserNotificationCenterDelegate
@@ -128,10 +149,6 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     ) {
         let id = notification.request.identifier
         if id == Self.breakCompleteID && isShowingCountdown {
-            handler([])
-            return
-        }
-        if id.hasPrefix(Self.reminderIDPrefix) && isAppInForeground {
             handler([])
             return
         }
@@ -154,11 +171,17 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
         Task { @MainActor in
             switch action {
             case Self.startActionID, UNNotificationDefaultActionIdentifier:
-                onStartBreak?()
-            case Self.snoozeActionID:
-                onSnooze?()
-            case Self.skipActionID:
-                onSkip?()
+                if let onStartBreak {
+                    onStartBreak()
+                } else {
+                    UserDefaults.standard.set(true, forKey: Self.pendingStartActionKey)
+                }
+            case Self.dismissActionID:
+                if let onDismiss {
+                    onDismiss()
+                } else {
+                    UserDefaults.standard.set(true, forKey: Self.pendingDismissActionKey)
+                }
             default:
                 break
             }

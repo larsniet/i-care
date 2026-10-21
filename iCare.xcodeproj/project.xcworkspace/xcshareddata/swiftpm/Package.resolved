@@ -1,0 +1,15 @@
+{
+  "originHash" : "f3ac30d77e8e31c321333527b92c72bc5750d310e50a4ced1a3ed93303895265",
+  "pins" : [
+    {
+      "identity" : "communicator",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/KaneCheshire/Communicator",
+      "state" : {
+        "revision" : "641599ec5456d04b7d3d38c03064f280a8773887",
+        "version" : "4.1.1"
+      }
+    }
+  ],
+  "version" : 3
+}

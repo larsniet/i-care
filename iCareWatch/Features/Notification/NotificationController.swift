@@ -30,46 +30,9 @@ struct WatchNotificationBody: View {
                 .foregroundStyle(ICareColors.textSecondary)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.85)
-
-            Button {
-                let now = Date()
-                NotificationCenter.default.post(
-                    name: .iCareStartBreak,
-                    object: nil,
-                    userInfo: ["breakStartedAt": now.timeIntervalSince1970]
-                )
-                WatchSyncManager.shared.sendCommand("startBreak", payload: [
-                    "breakStartedAt": now.timeIntervalSince1970
-                ])
-            } label: {
-                Text("Start")
-                    .font(ICareTypography.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, ICareSpacing.md)
-                    .background(ICareColors.brand)
-                    .clipShape(RoundedRectangle(cornerRadius: ICareSpacing.CornerRadius.md))
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                NotificationCenter.default.post(name: .iCareSnooze, object: nil)
-            } label: {
-                Text("Snooze")
-                    .font(ICareTypography.headline)
-                    .foregroundStyle(ICareColors.textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 36)
-            }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, ICareSpacing.md)
         .padding(.vertical, ICareSpacing.sm)
         .background(ICareColors.surface)
     }
-}
-
-extension Notification.Name {
-    static let iCareStartBreak = Notification.Name("icare.action.startBreak")
-    static let iCareSnooze = Notification.Name("icare.action.snooze")
 }

@@ -10,7 +10,7 @@ struct PrimaryButton: View {
         Button(action: action) {
             Text(title)
                 .font(ICareTypography.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(ICareColors.onBrand)
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
                 .background(ICareColors.brand)

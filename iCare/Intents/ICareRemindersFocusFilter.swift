@@ -24,14 +24,29 @@ struct ICareRemindersFocusFilter: SetFocusFilterIntent {
         return DisplayRepresentation(stringLiteral: "Reminders paused")
     }
 
-    func perform() async throws -> some IntentResult {
-        let hasOverride = !enableReminders || intervalMinutes != nil
-        let state = FocusFilterState(
-            overrideActive: hasOverride,
+    var filterState: FocusFilterState {
+        FocusFilterState(
+            overrideActive: !enableReminders || intervalMinutes != nil,
             enableReminders: enableReminders,
             intervalOverrideMinutes: intervalMinutes
         )
-        SettingsStore.save(state)
+    }
+
+    func perform() async throws -> some IntentResult {
+        SettingsStore.save(filterState)
+        // iOS only runs this while iCare is in the foreground, so apply it right away.
+        await MainActor.run { AppState.current?.refreshFocusFilterState() }
         return .result()
+    }
+
+    /// iOS doesn't run `perform()` while iCare is in the background, so a Focus that
+    /// starts or ends then is missed. Ask the system for the active filter on launch
+    /// and on every return to the foreground instead.
+    @MainActor
+    static func syncFromSystem(into appState: AppState) async {
+        // `current` throws when no Focus with this filter is on, which means no override.
+        let state = (try? await current)?.filterState ?? FocusFilterState()
+        SettingsStore.save(state)
+        appState.refreshFocusFilterState()
     }
 }
