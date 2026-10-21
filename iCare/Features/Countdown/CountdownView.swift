@@ -4,6 +4,7 @@ import UIKit
 
 struct CountdownView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
 
     @State private var isComplete = false
@@ -51,6 +52,19 @@ struct CountdownView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [impactHaptic] in
                     impactHaptic.impactOccurred()
                 }
+            }
+        }
+        // Finishing only on the number reaching 0 missed the end whenever the screen
+        // wasn't redrawing (wrist down, always-on, app in the background), so the
+        // countdown sat at 0 until Dismiss while the next interval was already running.
+        .task(id: endDate) {
+            guard let endDate else { return }
+            try? await Task.sleep(for: .seconds(max(0, endDate.timeIntervalSinceNow)))
+            if !Task.isCancelled { finishBreak(type: .completed) }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active, let endDate, endDate.timeIntervalSinceNow <= 0 {
+                finishBreak(type: .completed)
             }
         }
         .onDisappear {
@@ -121,8 +135,11 @@ struct CountdownView: View {
         }
     }
 
-    private func finishBreak(type: BreakCompletionType) {
-        guard !isComplete || type == .skipped else { return }
+    private func finishBreak(type requested: BreakCompletionType) {
+        // Dismissing once the time is already up still means the break was taken.
+        let isPastEnd = endDate.map { $0.timeIntervalSinceNow <= 1.5 } ?? false
+        let type: BreakCompletionType = requested == .skipped && isPastEnd ? .completed : requested
+        guard !isComplete else { return }
 
         if type == .completed, let endDate {
             let wallClockRemaining = endDate.timeIntervalSince(Date())
