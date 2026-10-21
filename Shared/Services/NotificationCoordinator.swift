@@ -64,6 +64,9 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
     // Every applied sync state reschedules, so skip identical batches instead of
     // cancelling and re-adding the same notifications over and over.
     private var lastScheduledBatch: (dates: [Date], soundEnabled: Bool)?
+    /// Reminders this process scheduled and still wants. Anything else with the
+    /// reminder prefix is stale (cancelled, or left by an earlier launch or version).
+    private var scheduledReminderIDs: Set<String> = []
 
     func scheduleReminders(at dates: [Date], settings: ReminderSettings) {
         if let last = lastScheduledBatch, last.dates == dates, last.soundEnabled == settings.soundEnabled {
@@ -72,6 +75,9 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
         cancelPendingReminders()
         lastScheduledBatch = (dates, settings.soundEnabled)
 
+        // A paired Watch silently drops a forwarded reminder whose ID it has seen
+        // before, so every batch gets fresh IDs instead of reusing reminder.0...49.
+        let batch = Int(Date().timeIntervalSince1970)
         for (index, date) in dates.enumerated() {
             let content = UNMutableNotificationContent()
             content.title = "Time for a break"
@@ -86,8 +92,10 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
                 from: date
             )
             let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+            let identifier = "\(Self.reminderIDPrefix)\(batch).\(index)"
+            scheduledReminderIDs.insert(identifier)
             let request = UNNotificationRequest(
-                identifier: "\(Self.reminderIDPrefix)\(index)",
+                identifier: identifier,
                 content: content,
                 trigger: trigger
             )
@@ -97,15 +105,31 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
 
     func cancelPendingReminders() {
         lastScheduledBatch = nil
-        center.removePendingNotificationRequests(withIdentifiers: Self.reminderIDs)
+        center.removePendingNotificationRequests(withIdentifiers: Array(scheduledReminderIDs))
+        scheduledReminderIDs.removeAll()
+        removeStalePendingReminders()
     }
 
     /// Clears reminders already sitting in Notification Center once a break is handled.
     func clearDeliveredReminders() {
-        center.removeDeliveredNotifications(withIdentifiers: Self.reminderIDs)
+        center.getDeliveredNotifications { [center] delivered in
+            let ids = delivered.map(\.request.identifier).filter { $0.hasPrefix(Self.reminderIDPrefix) }
+            center.removeDeliveredNotifications(withIdentifiers: ids)
+        }
     }
 
-    private static let reminderIDs = (0..<ReminderEngine.maxBatchSize).map { "\(reminderIDPrefix)\($0)" }
+    /// Removes pending reminders this process no longer tracks. The check runs on the
+    /// main queue against the current set, so a batch added meanwhile is never removed.
+    private func removeStalePendingReminders() {
+        center.getPendingNotificationRequests { [weak self] requests in
+            let ids = requests.map(\.identifier).filter { $0.hasPrefix(Self.reminderIDPrefix) }
+            DispatchQueue.main.async {
+                guard let self else { return }
+                let stale = ids.filter { !self.scheduledReminderIDs.contains($0) }
+                self.center.removePendingNotificationRequests(withIdentifiers: stale)
+            }
+        }
+    }
 
     // MARK: - Break Complete Notification
 
