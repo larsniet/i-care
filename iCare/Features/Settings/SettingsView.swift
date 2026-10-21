@@ -18,6 +18,7 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: ICareSpacing.lg) {
                     pageHeader
+                        .clearOfWindowControls()
                     scheduleSection
                     activeHoursSection
                     notificationsSection

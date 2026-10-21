@@ -4,6 +4,7 @@ struct HomeView: View {
     @EnvironmentObject private var appState: AppState
     @State private var selectedTab = 0
     @State private var showCountdown = false
+    @State private var bottomStackHeight: CGFloat = 180
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -56,6 +57,7 @@ struct HomeView: View {
 
             VStack(spacing: 0) {
                 homeHeader
+                    .clearOfWindowControls()
                     .padding(.horizontal, ICareSpacing.lg)
                     .padding(.top, ICareSpacing.base)
 
@@ -67,13 +69,16 @@ struct HomeView: View {
 
     private var focusDashboard: some View {
         GeometryReader { geo in
-            let buttonAreaHeight: CGFloat = 180
-            let ringCenterY = (geo.size.height - buttonAreaHeight) / 2
+            // Center the ring in the space above the card and buttons, and shrink it
+            // when that space is short (small iPad windows, landscape).
+            let ringArea = max(0, geo.size.height - bottomStackHeight)
+            let ringScale = min(1, max(0.3, (ringArea - ICareSpacing.lg) / ringSize))
 
             ZStack(alignment: .top) {
                 ringView
                     .frame(width: geo.size.width, height: ringSize)
-                    .position(x: geo.size.width / 2, y: ringCenterY)
+                    .scaleEffect(ringScale)
+                    .position(x: geo.size.width / 2, y: ringArea / 2)
 
                 VStack(spacing: ICareSpacing.base) {
                     if appState.currentStatus == .active || appState.currentStatus == .paused {
@@ -85,8 +90,9 @@ struct HomeView: View {
                     bottomButtons
                         .padding(.horizontal, ICareSpacing.lg)
                 }
-                .frame(maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, ICareSpacing.base)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bottomStackHeight = $0 }
+                .frame(maxHeight: .infinity, alignment: .bottom)
             }
             .animation(.easeInOut(duration: 0.35), value: appState.currentStatus)
         }

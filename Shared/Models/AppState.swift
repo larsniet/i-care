@@ -76,6 +76,7 @@ final class AppState: ObservableObject {
     private var syncVersion: Int
     private var pendingSettingsCommitTask: Task<Void, Never>?
     private var breakDevice: DeviceType?
+    private var dueRefreshTimer: Timer?
 
     // MARK: - Computed
 
@@ -190,8 +191,10 @@ final class AppState: ObservableObject {
         guard let startedAt = breakStartedAt else { return }
         let breakEndedAt = startedAt.addingTimeInterval(Double(settings.breakDurationSeconds))
         recordBreak(
+            // Both devices count down the same break; the one that started it owns
+            // a completion, so the last device to finish can't relabel it.
             type: type,
-            device: device,
+            device: type == .completed ? (breakDevice ?? device) : device,
             recordID: historyRecordID(scope: "break", anchor: startedAt),
             startedAt: startedAt,
             // A break finished in the background is only noticed on the next open.
@@ -393,6 +396,8 @@ final class AppState: ObservableObject {
         #endif
         breakDevice = state.phase == .break ? state.breakDevice : nil
 
+        scheduleDueRefresh(at: state.phase == .work ? state.nextReminderAt : nil)
+
         let effectiveSettings = settingsWithFocusOverrides()
         let canScheduleLocally = effectiveSettings.remindersEnabled
             && !runtimeState.isPaused
@@ -585,6 +590,15 @@ final class AppState: ObservableObject {
         runtimeState.lastReminderHandledAt = Date()
         if type == .completed {
             runtimeState.lastReminderFiredAt = Date()
+        }
+    }
+
+    /// "Break due" is derived from the clock, so nothing redraws the moment it passes.
+    private func scheduleDueRefresh(at date: Date?) {
+        dueRefreshTimer?.invalidate()
+        guard let date, date.timeIntervalSinceNow > 0 else { return }
+        dueRefreshTimer = Timer.scheduledTimer(withTimeInterval: date.timeIntervalSinceNow + 0.5, repeats: false) { [weak self] _ in
+            Task { @MainActor in self?.objectWillChange.send() }
         }
     }
 

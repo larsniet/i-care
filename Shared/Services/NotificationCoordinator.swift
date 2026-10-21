@@ -38,16 +38,19 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
             options: [.destructive]
         )
         // watchOS already adds its own Dismiss button, so ours would show up twice.
+        // The system's Dismiss only reaches us with .customDismissAction.
         #if os(watchOS)
         let actions = [startAction]
+        let options: UNNotificationCategoryOptions = [.customDismissAction]
         #else
         let actions = [startAction, dismissAction]
+        let options: UNNotificationCategoryOptions = []
         #endif
         let category = UNNotificationCategory(
             identifier: Self.categoryIdentifier,
             actions: actions,
             intentIdentifiers: [],
-            options: []
+            options: options
         )
         center.setNotificationCategories([category])
     }
@@ -176,9 +179,14 @@ final class NotificationCoordinator: NSObject, UNUserNotificationCenterDelegate,
                     UserDefaults.standard.set(true, forKey: Self.pendingStartActionKey)
                 }
             case Self.dismissActionID, UNNotificationDismissActionIdentifier:
-                if action == Self.dismissActionID, let onDismiss {
+                // On iPhone, swiping a reminder away isn't a decision to skip the break.
+                // On the Watch the system Dismiss button replaces ours, so it is.
+                #if !os(watchOS)
+                guard action == Self.dismissActionID else { break }
+                #endif
+                if let onDismiss {
                     onDismiss()
-                } else if action == Self.dismissActionID {
+                } else {
                     UserDefaults.standard.set(true, forKey: Self.pendingDismissActionKey)
                 }
             default:

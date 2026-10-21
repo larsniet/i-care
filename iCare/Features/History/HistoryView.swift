@@ -11,6 +11,7 @@ struct HistoryView: View {
             ScrollView {
                 VStack(spacing: ICareSpacing.lg) {
                     pageHeader
+                        .clearOfWindowControls()
                     todayCard
 
                     if todayRecords.isEmpty {

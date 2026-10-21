@@ -41,6 +41,7 @@ struct OnboardingFlow: View {
                 .padding(.horizontal, ICareSpacing.lg)
                 .padding(.top, ICareSpacing.base)
                 .padding(.bottom, ICareSpacing.lg)
+                .clearOfWindowControls()
                 .zIndex(1)
 
                 // MARK: - Step Content

@@ -45,6 +45,15 @@ extension View {
         modifier(ScaledFont(size: size, weight: weight, design: design))
     }
 
+    /// iPadOS draws window controls over the top-leading corner; keep headers below them.
+    func clearOfWindowControls() -> some View {
+        #if os(iOS)
+        padding(.top, UIDevice.current.userInterfaceIdiom == .pad ? ICareSpacing.lg : 0)
+        #else
+        self
+        #endif
+    }
+
     /// Keeps content at a comfortable reading width on iPad.
     func readableWidth(_ maxWidth: CGFloat = 560) -> some View {
         frame(maxWidth: maxWidth).frame(maxWidth: .infinity)
