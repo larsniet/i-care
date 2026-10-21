@@ -7,7 +7,7 @@ struct SettingsView: View {
     @State private var selectedIntervalMinutes = 20
     @State private var selectedBreakDurationSeconds = 20
 
-    private let intervalOptions = [1, 15, 20, 30, 45]
+    private let intervalOptions = [15, 20, 30, 45]
     private let breakDurationOptions = [10, 20, 30]
 
     var body: some View {

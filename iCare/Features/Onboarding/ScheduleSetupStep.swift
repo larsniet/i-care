@@ -12,7 +12,7 @@ struct ScheduleSetupStep: View {
         )
     }
 
-    private let intervalOptions = [1, 15, 20, 30, 45]
+    private let intervalOptions = [15, 20, 30, 45]
     private let breakOptions = [10, 20, 30]
 
     var body: some View {
